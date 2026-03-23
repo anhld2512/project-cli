@@ -1,0 +1,2288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project CLI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --red: #dc2626;
+      --red-dim: #991b1b;
+      --red-bg: #fef2f2;
+      --red-border: #fca5a5;
+      --black: #0a0a0a;
+      --gray-900: #111111;
+      --gray-800: #1f1f1f;
+      --gray-700: #2e2e2e;
+      --gray-600: #444444;
+      --gray-500: #666666;
+      --gray-400: #888888;
+      --gray-300: #b0b0b0;
+      --gray-200: #d4d4d4;
+      --gray-150: #e5e5e5;
+      --gray-100: #f0f0f0;
+      --gray-50: #f8f8f8;
+      --white: #ffffff;
+      --green: #16a34a;
+      --yellow: #ca8a04;
+      --sidebar-bg: #ffffff;
+      --sidebar-hover: #f5f5f5;
+      --sidebar-active: #fafafa;
+      --sidebar-border: #e8e8e8;
+    }
+    html, body { height: 100%; overflow: hidden; }
+    body { font-family: 'Inter', sans-serif; background: var(--gray-50); color: var(--black); font-size: 13px; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--gray-400); }
+
+    /* Layout */
+    .layout { display: flex; height: 100vh; overflow: hidden; flex-direction: column; }
+    .body-row { display: flex; flex: 1; overflow: hidden; }
+
+    /* Top bar */
+    .topbar { height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; background: var(--white); border-bottom: 1px solid var(--gray-150); flex-shrink: 0; z-index: 10; }
+    .topbar-left { display: flex; align-items: center; gap: 12px; }
+    .topbar-logo { width: 26px; height: 26px; background: var(--black); border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .topbar-logo svg { width: 14px; height: 14px; color: white; }
+    .topbar-title { font-weight: 700; font-size: 13px; color: var(--black); }
+    .topbar-pkg { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--gray-400); background: var(--gray-100); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--gray-150); }
+    .topbar-right { display: flex; align-items: center; gap: 8px; }
+    .badge { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 20px; border: 1px solid var(--gray-200); background: var(--gray-50); color: var(--gray-500); }
+    .badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gray-400); }
+    .badge.ok .dot { background: var(--green); }
+    .badge.err .dot { background: var(--red); }
+    .sysinfo { font-size: 11px; color: var(--gray-400); font-family: 'JetBrains Mono', monospace; display:flex; align-items:center; gap:4px; }
+    .sysinfo:hover { color: var(--gray-600); }
+    .btn-ghost { font-size: 12px; color: var(--gray-500); padding: 4px 10px; border-radius: 6px; cursor: pointer; background: none; border: none; transition: background .15s, color .15s; }
+    .btn-ghost:hover { background: var(--gray-100); color: var(--black); }
+
+    /* Sidebar */
+    .sidebar { width: 256px; flex-shrink: 0; display: flex; flex-direction: column; background: var(--sidebar-bg); border-right: 1px solid var(--sidebar-border); overflow: hidden; }
+    .sidebar-head { padding: 12px 12px 8px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--sidebar-border); flex-shrink: 0; }
+    .sidebar-head-tabs { display: flex; gap: 0; }
+    .stab { font-size: 11px; font-weight: 500; padding: 4px 10px; border-radius: 5px; cursor: pointer; background: none; border: none; color: var(--gray-400); transition: all .15s; }
+    .stab.active { background: var(--black); color: var(--white); }
+    .stab:hover:not(.active) { color: var(--gray-600); background: var(--gray-100); }
+    .sidebar-body { flex: 1; overflow-y: auto; }
+    .spanel { display: none; flex-direction: column; }
+    .spanel.active { display: flex; }
+
+    /* Add project btn wrapper */
+    .add-btn-wrap { position: sticky; top: 0; z-index: 20; background: var(--sidebar-bg); padding-bottom: 4px; border-bottom: 1px solid var(--sidebar-border); margin-bottom: 8px; }
+
+    .add-btn { margin: 10px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; font-weight: 500; color: var(--gray-400); background: var(--sidebar-bg); border: 1px dashed var(--gray-200); border-radius: 8px; padding: 9px 12px; cursor: pointer; transition: all .15s; width: calc(100% - 20px); }
+    .add-btn:hover { border-color: var(--red); color: var(--red); background: rgba(220,38,38,.04); }
+
+    /* Project item in sidebar */
+    .proj-item { margin: 2px 8px; border-radius: 8px; padding: 10px 10px 8px; cursor: pointer; border: 1px solid gray; transition: all .15s; }
+    .proj-item:hover { background: var(--gray-50); border-color: var(--gray-200); }
+    .proj-item.selected { background: var(--white); border-color: var(--red) !important; box-shadow: 0 1px 6px rgba(220,38,38,.1); }
+    .proj-item.selected .proj-name { color: var(--black); }
+    .proj-row { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; }
+    .proj-name { font-size: 13px; font-weight: 600; color: var(--gray-700); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .proj-type { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; padding: 1px 5px; border-radius: 3px; flex-shrink: 0; }
+    .type-Frontend { background: #eff6ff; color: #2563eb; }
+    .type-Backend { background: #fff7ed; color: #c2410c; }
+    .type-Fullstack { background: #faf5ff; color: #7e22ce; }
+    .type-Service { background: #ecfeff; color: #0e7490; }
+    .type-Other { background: var(--gray-100); color: var(--gray-500); }
+    .proj-meta { font-size: 10px; color: var(--gray-400); font-family: 'JetBrains Mono', monospace; display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+    .proj-actions { display: flex; gap: 3px; }
+    .pa-btn { flex: 1; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: 4px 0; border-radius: 5px; border: 1px solid var(--gray-200); background: transparent; color: var(--gray-400); cursor: pointer; text-align: center; transition: all .12s; }
+    .pa-btn:hover { background: var(--gray-100); color: var(--gray-700); border-color: var(--gray-300); }
+    .pa-btn.start:hover { border-color: #bbf7d0; color: var(--green); background: #f0fdf4; }
+    .pa-btn.restart:hover { border-color: #fde68a; color: #92400e; background: #fffbeb; }
+    .pa-btn.stop:hover { border-color: var(--gray-300); color: var(--gray-600); background: var(--gray-50); }
+    .pa-btn.del:hover { border-color: var(--red-border); color: var(--red); background: var(--red-bg); }
+
+    /* Status dot */
+    .dot-status { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .dot-online { background: #22c55e; box-shadow: 0 0 0 2px rgba(34,197,94,.3); }
+    .dot-stopped { background: #9ca3af; }
+    .dot-errored { background: #ef4444; box-shadow: 0 0 0 2px rgba(239,68,68,.3); }
+    .dot-launching { background: #f59e0b; box-shadow: 0 0 0 2px rgba(245,158,11,.3); }
+
+    /* Live log in sidebar */
+    .log-panel { display: flex; flex-direction: column; flex: 1; padding: 8px; overflow: hidden; }
+    .log-box { flex: 1; background: #1a1a1a; border-radius: 8px; overflow-y: auto; padding: 8px 10px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #9ca3af; white-space: pre-wrap; word-break: break-all; line-height: 1.6; border: 1px solid var(--gray-150); }
+    .log-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .log-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--gray-400); }
+
+    /* Main area */
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--white); }
+    .main-tabs { display: flex; align-items: center; padding: 0 20px; border-bottom: 1px solid var(--gray-150); background: var(--gray-50); flex-shrink: 0; gap: 0; }
+    .mtab { font-size: 12px; font-weight: 500; padding: 11px 14px; cursor: pointer; background: none; border: none; border-bottom: 2px solid transparent; color: var(--gray-400); transition: all .15s; white-space: nowrap; }
+    .mtab.active { color: var(--black); border-bottom-color: var(--red); font-weight: 600; }
+    .mtab:hover:not(.active) { color: var(--gray-600); }
+    .mtab.project-tab { color: var(--red); }
+    .mtab.project-tab.active { color: var(--red); border-bottom-color: var(--red); }
+    .tab-sep { width: 1px; height: 16px; background: var(--gray-200); margin: 0 4px; flex-shrink: 0; }
+    .main-actions { margin-left: auto; display: flex; gap: 6px; align-items: center; padding-bottom: 2px; }
+    .action-btn { font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: 6px; border: 1px solid var(--gray-200); background: var(--white); color: var(--gray-600); cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all .12s; }
+    .action-btn:hover { border-color: var(--gray-400); color: var(--black); }
+    .action-btn.start-all:hover { border-color: var(--green); color: var(--green); background: #f0fdf4; }
+    .action-btn.stop-all:hover { border-color: var(--red); color: var(--red); background: var(--red-bg); }
+
+    /* Panels */
+    .panel { display: none; flex: 1; overflow: hidden; }
+    .panel.active { display: flex; flex-direction: column; }
+
+    /* Terminal */
+    .term-wrap { flex: 1; display: flex; flex-direction: column; margin: 12px; border-radius: 10px; overflow: hidden; background: #1a1a1a; box-shadow: 0 2px 12px rgba(0,0,0,.08); border: 1px solid var(--gray-200); }
+    .term-out { flex: 1; overflow-y: auto; padding: 14px 16px; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; color: #e4e4e7; white-space: pre-wrap; word-break: break-all; line-height: 1.65; }
+    .term-in { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-top: 1px solid rgba(255,255,255,.06); background: #1a1a1a; }
+    .term-prompt { color: #4ade80; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; }
+    .term-input { flex: 1; background: transparent; border: none; outline: none; color: var(--white); font-family: 'JetBrains Mono', monospace; font-size: 12.5px; caret-color: var(--red); }
+    .term-btn { font-size: 11px; color: #4b5563; background: none; border: none; cursor: pointer; padding: 2px 6px; border-radius: 4px; transition: color .12s; }
+    .term-btn:hover { color: #9ca3af; }
+
+    /* Overview */
+    .overview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; padding: 20px; overflow-y: auto; align-content: start; }
+    .ov-card { background: var(--white); border: 1px solid var(--gray-150); border-radius: 12px; padding: 16px; transition: all .15s; }
+    .ov-card:hover { border-color: var(--gray-300); box-shadow: 0 4px 16px rgba(0,0,0,.06); }
+    .ov-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .ov-name { font-weight: 700; font-size: 14px; flex: 1; }
+    .ov-status { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--gray-400); }
+    .ov-path { font-size: 11px; color: var(--gray-400); font-family: 'JetBrains Mono', monospace; background: var(--gray-50); padding: 5px 8px; border-radius: 5px; border: 1px solid var(--gray-100); margin-bottom: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ov-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 12px; }
+    .ov-stat { text-align: center; padding: 8px 4px; border: 1px solid var(--gray-100); border-radius: 7px; background: var(--gray-50); }
+    .ov-stat-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--gray-400); margin-bottom: 3px; }
+    .ov-stat-val { font-size: 13px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+    .ov-actions { display: flex; gap: 5px; }
+    .ov-btn { flex: 1; font-size: 11px; font-weight: 600; padding: 6px 0; border-radius: 7px; border: 1px solid var(--gray-150); background: var(--gray-50); color: var(--gray-600); cursor: pointer; transition: all .12s; }
+    .ov-btn:hover { background: var(--gray-100); border-color: var(--gray-300); }
+
+    /* App settings */
+    .settings-scroll { flex: 1; overflow-y: auto; padding: 24px 32px; background: #fafafa; }
+    .settings-inner { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: stretch; }
+    .card { background: var(--white); border: 1px solid rgba(0,0,0,0.06); border-radius: 16px; padding: 28px; box-shadow: 0 8px 24px rgba(0,0,0,0.03); transition: transform 0.2s ease, box-shadow 0.2s ease; min-width: 0; display: flex; flex-direction: column; }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(0,0,0,0.05); }
+    .card-title { font-size: 16px; font-weight: 700; margin-bottom: 24px; display: flex; align-items: center; gap: 12px; color: var(--black); }
+    .card-title i { color: #3b82f6; font-size: 18px; padding: 8px; background: #eff6ff; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+    .info-cell { background: #fafafa; border: 1px solid #eaeaea; border-radius: 10px; padding: 16px; transition: all .2s ease; position: relative; overflow: hidden; }
+    .info-cell:hover { background: var(--white); border-color: #d4d4d4; box-shadow: 0 6px 16px rgba(0,0,0,.04); }
+    .info-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--gray-400); margin-bottom: 6px; }
+    .info-val { font-size: 14px; font-weight: 600; color: var(--black); }
+    .divider { height: 1px; background: #eaeaea; margin: 24px 0; }
+    .sec-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--gray-500); margin-bottom: 12px; }
+    .input-row { display: flex; flex-direction: column; gap: 12px; }
+    .full-span { grid-column: 1 / -1; }
+    .inp { width: 100%; font-size: 14px; padding: 10px 14px; border: 1px solid #d4d4d4; border-radius: 9px; background: #fafafa; color: var(--black); outline: none; transition: all .2s; font-family: inherit; }
+    .inp:hover { border-color: #a3a3a3; background: var(--white); box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
+    .inp:focus { border-color: #3b82f6; background: var(--white); box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+    .inp.mono { font-family: 'JetBrains Mono', monospace; }
+    .pwd-form-wrap { border-top: 1px solid #eaeaea; margin-top: 24px; padding-top: 24px; animation: fadeInDown 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+    @keyframes fadeInDown { from { opacity: 0; transform: translateY(-8px) } to { opacity: 1; transform: translateY(0) } }
+    .token-row { display: flex; gap: 10px; align-items: flex-start; }
+    .token-display { flex: 1; min-width: 0; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--gray-600); background: #fafafa; border: 1px solid #eaeaea; border-radius: 9px; padding: 12px 14px; word-break: break-all; white-space: normal; cursor: text; user-select: all; transition: all .15s; max-height: 120px; overflow-y: auto; }
+    .token-display:hover { border-color: #d4d4d4; background: var(--white); box-shadow: 0 4px 12px rgba(0,0,0,.03); }
+    .import-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 12px; }
+    .textarea { width: 100%; font-family: 'JetBrains Mono', monospace; font-size: 13px; padding: 12px 14px; border: 1px solid #d4d4d4; border-radius: 9px; background: #fafafa; color: var(--black); outline: none; resize: none; transition: all .2s; }
+    .textarea:hover { border-color: #a3a3a3; background: var(--white); }
+    .textarea:focus { border-color: #3b82f6; background: var(--white); box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+    .danger-card { background: #fff1f2; border-color: #fca5a5; grid-column: 1 / -1; }
+    .danger-card .card-title i { color: var(--red); background: #fee2e2; }
+
+    /* Buttons */
+    .btn { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; padding: 7px 14px; border-radius: 7px; cursor: pointer; transition: all .12s; border: none; }
+    .btn-primary { background: var(--black); color: var(--white); }
+    .btn-primary:hover { background: var(--gray-800); }
+    .btn-secondary { background: var(--white); color: var(--gray-700); border: 1px solid var(--gray-200); }
+    .btn-secondary:hover { background: var(--gray-50); border-color: var(--gray-400); }
+    .btn-danger { background: var(--red); color: var(--white); }
+    .btn-danger:hover { background: var(--red-dim); }
+    .btn-ghost-sm { background: none; border: none; font-size: 11px; color: var(--gray-400); cursor: pointer; padding: 3px 7px; border-radius: 5px; display: flex; align-items: center; gap: 4px; transition: all .12s; }
+    .btn-ghost-sm:hover { background: var(--gray-100); color: var(--black); }
+    .msg-ok { color: var(--green); font-size: 12px; font-weight: 600; }
+    .msg-err { color: var(--red); font-size: 12px; font-weight: 600; }
+
+    /* Project view */
+    .pv-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid var(--gray-150); background: var(--white); flex-shrink: 0; }
+    .pv-title { display: flex; align-items: center; gap: 10px; }
+    .pv-name { font-size: 18px; font-weight: 800; }
+    .pv-status-text { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--gray-400); letter-spacing: .06em; }
+    .pv-btns { display: flex; gap: 6px; }
+    .pv-btn { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: 6px 14px; border-radius: 7px; border: 1px solid var(--gray-200); background: var(--white); cursor: pointer; transition: all .12s; }
+    .pv-btn.start:hover { border-color: var(--green); color: var(--green); background: #f0fdf4; }
+    .pv-btn.restart:hover { border-color: #ca8a04; color: #78350f; background: #fefce8; }
+    .pv-btn.stop:hover { border-color: var(--red); color: var(--red); background: var(--red-bg); }
+    .pv-tabs { display: flex; padding: 0 20px; border-bottom: 1px solid var(--gray-150); background: var(--gray-50); flex-shrink: 0; gap: 0; }
+    .ptab { font-size: 12px; font-weight: 500; padding: 9px 14px; cursor: pointer; background: none; border: none; border-bottom: 2px solid transparent; color: var(--gray-400); transition: all .15s; }
+    .ptab.active { color: var(--black); border-bottom-color: var(--red); font-weight: 600; }
+    .ptab:hover:not(.active) { color: var(--gray-600); }
+    .pv-body { flex: 1; overflow: hidden; position: relative; }
+
+    /* Project dashboard metrics */
+    .metrics-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; padding: 24px; align-items: stretch; }
+    .metric-card { background: var(--white); border: 1px solid rgba(0,0,0,0.06); border-radius: 16px; padding: 24px; box-shadow: 0 4px 16px rgba(0,0,0,0.02); transition: transform 0.2s ease, box-shadow 0.2s ease; display: flex; flex-direction: row; align-items: center; gap: 16px; }
+    .metric-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.05); }
+    .metric-icon { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
+    .metric-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--gray-400); margin-bottom: 4px; }
+    .metric-val { font-size: 26px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: var(--black); line-height: 1.1; }
+    .metric-val span { font-size: 14px; font-weight: 600; color: var(--gray-400); margin-left: 4px; }
+    .metric-sub { font-size: 12px; font-weight: 600; color: var(--gray-500); margin-top: 6px; font-family: 'JetBrains Mono', monospace; }
+
+    /* Project logs */
+    .log-full { position: absolute; inset: 0; display: flex; flex-direction: column; background: #1a1a1a; }
+    .log-full-head { display: flex; justify-content: space-between; align-items: center; padding: 9px 14px; border-bottom: 1px solid #2a2a2a; background: #212121; flex-shrink: 0; }
+    .log-full-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #4b5563; display: flex; align-items: center; gap: 7px; }
+    .log-full-stream { flex: 1; overflow-y: auto; padding: 10px 14px; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: #d4d4d4; white-space: pre-wrap; word-break: break-all; line-height: 1.65; }
+    .pulse-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulseDot 2s infinite; }
+    @keyframes pulseDot { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    /* Project settings form */
+    .pv-settings { padding: 20px; overflow-y: auto; height: 100%; }
+    .pv-settings-inner { max-width: 680px; }
+    .form-section { margin-bottom: 20px; }
+    .form-section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--gray-500); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+    .form-row { display: grid; gap: 10px; margin-bottom: 10px; }
+    .form-row.cols-2 { grid-template-columns: 1fr 1fr; }
+    .form-row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .form-row.cols-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+    .form-field label { display: block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--gray-500); margin-bottom: 5px; }
+    .exec-mode-group { display: flex; gap: 0; }
+    .exec-mode-btn { flex: 1; font-size: 12px; font-weight: 600; padding: 8px 0; text-align: center; border: 1px solid var(--gray-200); background: var(--white); color: var(--gray-500); cursor: pointer; transition: all .12s; }
+    .exec-mode-btn:first-child { border-radius: 7px 0 0 7px; }
+    .exec-mode-btn:last-child { border-radius: 0 7px 7px 0; border-left: none; }
+    .exec-mode-btn.selected { background: var(--black); color: var(--white); border-color: var(--black); }
+    .toggles-row { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 4px; }
+    /* Resource limit rows */
+    .limit-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border: 1px solid var(--gray-150); border-radius: 9px; margin-bottom: 7px; gap: 12px; background: var(--white); transition: border-color .15s; }
+    .limit-row:last-child { margin-bottom: 0; }
+    .limit-left { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+    .limit-info { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .limit-name { font-size: 12px; font-weight: 600; color: var(--gray-700); }
+    .limit-desc { font-size: 10px; color: var(--gray-400); }
+    .limit-control { display: flex; align-items: center; gap: 6px; opacity: .35; pointer-events: none; transition: opacity .2s; }
+    .limit-control.active { opacity: 1; pointer-events: all; }
+    .limit-inp { width: 90px; text-align: right; }
+    .limit-unit { width: 64px; padding: 8px 6px; cursor: pointer; }
+    .limit-unit-label { font-size: 11px; font-weight: 600; color: var(--gray-400); white-space: nowrap; }
+    .toggle-sm .toggle-track { width: 30px; height: 17px; }
+    .toggle-sm .toggle-thumb { width: 11px; height: 11px; }
+    input:checked ~ .toggle-track .toggle-thumb, .toggle-sm input:checked ~ .toggle-track .toggle-thumb { transform: translateX(13px); }
+
+    /* Toggle switch */
+    .toggle { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
+    .toggle input { display: none; }
+    .toggle-track { width: 36px; height: 20px; background: var(--gray-200); border-radius: 10px; position: relative; transition: background .2s; flex-shrink: 0; }
+    .toggle-thumb { position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; background: var(--white); border-radius: 50%; transition: transform .2s; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+    .toggle input:checked + .toggle-track { background: var(--red); }
+    .toggle input:checked + .toggle-track .toggle-thumb { transform: translateX(16px); }
+    .toggle-label { font-size: 13px; font-weight: 500; color: var(--gray-700); }
+
+    /* Ecosystem upload */
+    .upload-zone { border: 1.5px dashed var(--gray-200); border-radius: 8px; padding: 14px; text-align: center; cursor: pointer; transition: all .15s; background: var(--gray-50); }
+    .upload-zone:hover { border-color: var(--red); background: var(--red-bg); }
+    .upload-zone.has-file { border-color: var(--green); background: #f0fdf4; }
+    .upload-zone-text { font-size: 12px; color: var(--gray-400); }
+    .upload-zone.has-file .upload-zone-text { color: var(--green); font-weight: 600; }
+
+    /* Env file list (replaces chips) */
+    .env-file-list { display: flex; flex-direction: column; gap: 3px; margin-bottom: 8px; }
+    .env-file-row { border: 1px solid var(--gray-150); border-radius: 7px; overflow: hidden; transition: border-color .12s; }
+    .env-file-row.active { border-color: #93c5fd; }
+    .env-file-row-head { display: flex; align-items: center; gap: 8px; padding: 7px 10px; background: var(--white); }
+    .env-file-row.active .env-file-row-head { background: #f0f7ff; }
+    .env-file-toggle { width: 14px; height: 14px; accent-color: #2563eb; cursor: pointer; flex-shrink: 0; }
+    .env-file-name { flex: 1; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--gray-700); }
+    .env-file-row.active .env-file-name { color: #1d4ed8; font-weight: 600; }
+    .env-file-preview-btn { display: flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 500; color: var(--gray-400); background: none; border: none; cursor: pointer; padding: 2px 7px; border-radius: 4px; transition: all .12s; white-space: nowrap; }
+    .env-file-preview-btn:hover { background: var(--gray-100); color: var(--gray-700); }
+    .env-file-remove { background: none; border: none; cursor: pointer; color: var(--gray-300); font-size: 15px; padding: 2px 4px; border-radius: 4px; line-height: 1; transition: color .12s; }
+    .env-file-remove:hover { color: var(--red); }
+    .env-file-preview { display: none; background: var(--gray-50); border-top: 1px solid var(--gray-150); font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--gray-500); line-height: 1.8; max-height: 200px; overflow-y: auto; }
+    .env-file-preview.open { display: block; }
+    .env-import-row-btn { color: var(--gray-400); gap: 4px; }
+    .env-import-row-btn:hover { color: var(--green) !important; border-color: #bbf7d0 !important; background: #f0fdf4 !important; }
+    .env-file-preview-line { display: flex; gap: 8px; padding: 0 10px 0 32px; }
+    .env-file-preview-key { color: #0e7490; min-width: 120px; flex-shrink: 0; }
+    .env-file-preview-val { color: var(--gray-500); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .env-file-empty { font-size: 11px; color: var(--gray-300); font-style: italic; padding: 6px 0; }
+    /* Env var editor */
+    .env-vars-list { display: flex; flex-direction: column; gap: 5px; margin-bottom: 8px; }
+    .env-var-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 5px; align-items: center; }
+    .kv-input { font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 5px 9px; border: 1px solid var(--gray-200); border-radius: 6px; background: var(--white); color: var(--black); outline: none; width: 100%; transition: border-color .12s; }
+    .kv-input:focus { border-color: var(--black); }
+    .kv-del { background: none; border: none; cursor: pointer; color: var(--gray-300); font-size: 16px; line-height: 1; padding: 2px 5px; border-radius: 4px; transition: color .12s; flex-shrink: 0; }
+    .kv-del:hover { color: var(--red); background: var(--red-bg); }
+    /* Env file tag (selected list) */
+    .env-file-tag { display: inline-flex; align-items: center; gap: 5px; font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 3px 8px; border-radius: 5px; background: var(--gray-100); border: 1px solid var(--gray-200); color: var(--gray-700); }
+    .env-file-tag button { background: none; border: none; cursor: pointer; color: var(--gray-400); font-size: 13px; line-height: 1; padding: 0 1px; display: flex; align-items: center; transition: color .12s; }
+    .env-file-tag button:hover { color: var(--red); }
+
+    /* Add project modal */
+    .modal-backdrop { position: fixed; inset: 0; z-index: 50; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,.5); backdrop-filter: blur(3px); }
+    .modal-backdrop.open { display: flex; }
+    .modal { background: var(--white); border-radius: 16px; border: 1px solid var(--gray-150); box-shadow: 0 20px 60px rgba(0,0,0,.15); width: 100%; max-width: 500px; margin: 16px; overflow: hidden; animation: slideUp .22s ease; display: flex; flex-direction: column; max-height: calc(100vh - 32px); }
+    .modal-lg { max-width: 640px; }
+    .modal-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--gray-100); background: var(--gray-50); }
+    .modal-title { font-size: 14px; font-weight: 700; }
+    .modal-close { width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--gray-200); background: var(--white); cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--gray-400); transition: all .12s; }
+    .modal-close:hover { background: var(--gray-100); color: var(--black); }
+    .modal-body { padding: 18px; overflow-y: auto; flex: 1; min-height: 0; }
+    .modal-footer { padding: 12px 18px; border-top: 1px solid var(--gray-100); background: var(--white); flex-shrink: 0; }
+    /* Add modal step 1 — dir picker */
+    .add-dir-step { padding: 20px 18px 16px; border-bottom: 1px solid var(--gray-100); flex-shrink: 0; background: var(--white); }
+    .add-dir-detected { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 12px; color: var(--green); font-weight: 500; }
+    .add-dir-detected svg { flex-shrink: 0; }
+    /* Form detail section (step 2) */
+    .add-detail-step { display: none; }
+    .add-detail-step.visible { display: block; animation: fadeIn .18s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+    .modal-foot { display: flex; gap: 8px; padding: 14px 18px; border-top: 1px solid var(--gray-100); background: var(--gray-50); }
+    .confirm-modal { max-width: 380px; }
+    @keyframes slideUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+    /* Folder browser */
+    .browser-path { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--gray-600); background: var(--gray-100); padding: 8px 12px; border-radius: 6px; margin-bottom: 8px; border: 1px solid var(--gray-200); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .browser-list { flex: 1; overflow-y: auto; }
+    .browser-item { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 7px; cursor: pointer; color: var(--gray-700); font-size: 12px; font-family: 'JetBrains Mono', monospace; transition: all .12s; }
+    .browser-item:hover { background: var(--gray-100); color: var(--black); }
+    .browser-item.parent { font-weight: 700; color: var(--gray-400); }
+    .browser-item svg { color: var(--gray-400); flex-shrink: 0; }
+
+    /* Custom dropdown */
+    .dropdown-wrap { position: relative; }
+    .dropdown-btn { width: 100%; text-align: left; font-size: 13px; padding: 8px 12px; border: 1px solid var(--gray-200); border-radius: 7px; background: var(--white); color: var(--black); cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: border-color .12s; font-family: inherit; }
+    .dropdown-btn:hover { border-color: var(--gray-400); }
+    .dropdown-menu { position: absolute; z-index: 30; width: 100%; top: calc(100% - 60px); background: var(--white); border: 1px solid var(--gray-200); border-radius: 9px; box-shadow: 0 8px 24px rgba(0,0,0,.1); overflow: hidden; display: none; }
+    .dropdown-menu.open { display: block; }
+    .dropdown-item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 12px; font-size: 13px; font-weight: 500; color: var(--gray-700); background: transparent; border: none; border-radius: 6px; cursor: pointer; text-align: left; transition: all 0.2s; }
+    .dropdown-item:hover { background: var(--gray-100); color: var(--gray-900); }
+    .dropdown-item i { font-size: 14px; }
+    .dropdown-opt { padding: 8px 12px; font-size: 13px; cursor: pointer; color: var(--gray-700); transition: background .1s; }
+    .dropdown-opt:hover { background: var(--gray-50); color: var(--black); }
+
+    /* Toast */
+    .toast { position: fixed; top: 20px; right: 20px; z-index: 100; font-size: 13px; font-weight: 500; padding: 12px 18px; border-radius: 9px; box-shadow: 0 6px 20px rgba(0,0,0,.15); border: 1px solid; display: none; align-items: center; gap: 8px; max-width: 340px; animation: slideDownToast .3s ease; }
+    .toast.show { display: flex !important; }
+    .toast-ok { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
+    .toast-err { background: #fef2f2; color: #991b1b; border-color: #fca5a5; }
+    .toast-info { background: #eff6ff; color: #1e40af; border-color: #bfdbfe; }
+    .toast-warn { background: #fffbeb; color: #92400e; border-color: #fde68a; }
+    .toast i { font-size: 16px; flex-shrink: 0; }
+    @keyframes slideDownToast { from{opacity:0;transform:translateY(-15px)} to{opacity:1;transform:translateY(0)} }
+
+    /* Misc */
+    .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: var(--gray-400); padding: 40px; }
+    .empty-state svg { opacity: .3; }
+    .flex-center { display: flex; align-items: center; }
+    .gap-2 { gap: 8px; }
+    .hidden { display: none !important; }
+    .w-full { width: 100%; }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="dropdown-wrap" style="position:relative;">
+        <div style="display:flex; align-items:center; gap:8px; cursor:pointer;" onclick="toggleDropdown('titleMenu')">
+          <div class="topbar-logo" style="width:24px; height:24px;">
+            <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 1.293a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414L7.586 10 5.293 7.707a1 1 0 010-1.414zM11 12a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/></svg>
+          </div>
+          <span class="topbar-title" id="topbarTitle" style="font-weight:700;">Project CLI</span>
+          <i class="bi bi-chevron-down" style="font-size:10px; color:var(--gray-400);"></i>
+        </div>
+        <div class="dropdown-menu" id="titleMenu" style="left:0; top:calc(100% + 12px); width:200px; padding:6px;">
+          <div style="padding: 10px 12px; border-bottom: 1px solid var(--gray-100);">
+            <div style="font-size:11px; font-weight:600; color:var(--gray-400); text-transform:uppercase; letter-spacing:0.5px;">Namespace</div>
+            <div style="font-size:12px; font-weight:700; color:var(--gray-800); margin-top:2px;" id="navPkgMenu">—</div>
+          </div>
+          <button class="dropdown-item" onclick="setMainTab('cloud')">
+            <i class="bi bi-cloud" style="margin-right:8px; color:var(--gray-500);"></i> File Management
+          </button>
+          <button class="dropdown-item" onclick="setMainTab('settings')">
+            <i class="bi bi-gear" style="margin-right:8px; color:var(--gray-500);"></i> App Settings
+          </button>
+          <button class="dropdown-item" onclick="openRamModal()">
+            <i class="bi bi-cpu" style="margin-right:8px; color:var(--gray-500);"></i> Clean RAM
+          </button>
+        </div>
+      </div>
+      <span class="topbar-pkg mono" id="navPkg" style="margin-left: 8px;">—</span>
+    </div>
+    <div class="topbar-right">
+      <span class="badge" id="pm2Badge"><span class="dot"></span>CLI</span>
+      <div style="display:flex; align-items:center; cursor:pointer;" onclick="openRamModal()">
+        <span class="sysinfo sysinfo-hover" id="sysInfo">—</span>
+      </div>
+      <button class="btn-ghost" onclick="setMainTab('settings')">⚙ App Settings</button>
+      <button class="btn-ghost" onclick="logout()">Sign out</button>
+    </div>
+  </header>
+
+  <div id="ramModal" class="modal-backdrop">
+    <div class="modal modal-lg" style="width:600px; max-width:90%">
+      <div class="modal-head">
+        <h2 class="modal-title">Quản Lý RAM Khẩn Cấp ⚡</h2>
+        <button class="modal-close" onclick="closeRamModal()">×</button>
+      </div>
+      <div class="modal-body" style="padding:0;">
+        <div style="padding:16px 20px; border-bottom:1px solid var(--gray-150); background:#f8fafc">
+          <div style="font-size:12px; font-weight:700; color:var(--gray-500); text-transform:uppercase; margin-bottom:8px;">Dọn dẹp nhanh PM2 (Node.js)</div>
+          <div style="display:flex; gap:10px;">
+            <button onclick="cleanRam('reload')" class="btn-ghost" style="flex:1; background:white; border:1px solid var(--gray-200); padding:10px; display:flex; align-items:center; gap:8px;" onmouseover="this.style.borderColor='var(--blue-500)'" onmouseout="this.style.borderColor='var(--gray-200)'">
+              <i class="bi bi-recycle" style="color:var(--blue-500)"></i> Reload Ẩn (Xả Leak)
+            </button>
+            <button onclick="cleanRam('flush')" class="btn-ghost" style="flex:1; background:white; border:1px solid var(--gray-200); padding:10px; display:flex; align-items:center; gap:8px;" onmouseover="this.style.borderColor='var(--red)'" onmouseout="this.style.borderColor='var(--gray-200)'">
+              <i class="bi bi-eraser" style="color:var(--red)"></i> Xoá Cache Log PM2
+            </button>
+          </div>
+        </div>
+        <div style="padding:16px 20px 20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div style="font-size:12px; font-weight:700; color:var(--gray-500); text-transform:uppercase;">Tiến trình hệ thống đang ngậm RAM</div>
+            <button onclick="loadRamProcesses()" class="btn-ghost" style="font-size:11px; padding:2px 6px;"><i class="bi bi-arrow-clockwise"></i> Load lại</button>
+          </div>
+          <div id="procList" style="border:1px solid var(--gray-150); border-radius:8px; background:white;">
+            <div style="padding:20px; text-align:center; color:var(--gray-400); font-size:12px;">Đang quét RAM máy...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="body-row">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-head">
+        <div class="sidebar-head-tabs">
+          <button class="stab active" id="stab-projects" onclick="setSideTab('projects')">Projects</button>
+          <button class="stab" id="stab-logs" onclick="setSideTab('logs')">Live Logs</button>
+        </div>
+      </div>
+      <div class="sidebar-body">
+
+        <!-- Projects panel -->
+        <div class="spanel active" id="spanel-projects">
+          <div class="add-btn-wrap">
+            <button class="add-btn" onclick="openAddModal()">
+              <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+              Add Project
+            </button>
+          </div>
+          <div id="projectList"></div>
+          <div id="projectEmpty" class="empty-state hidden">
+            <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+            <span style="font-size:11px">No projects configured</span>
+          </div>
+        </div>
+
+        <!-- Global Logs panel -->
+        <div class="spanel" id="spanel-logs">
+          <div class="log-panel">
+            <div class="log-head">
+              <span class="log-label">Live PM2 Logs</span>
+              <button class="btn-ghost-sm" onclick="clearGlobalLog()">Clear</button>
+            </div>
+            <pre class="log-box" id="globalLogStream"></pre>
+          </div>
+        </div>
+
+
+
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+
+      <!-- Tabs -->
+      <div class="main-tabs">
+        <button class="mtab active" id="mtab-overview" onclick="setMainTab('overview')">Overview</button>
+        <button class="mtab" id="mtab-settings" onclick="setMainTab('settings')">App Settings</button>
+        <button class="mtab" id="mtab-cloud" onclick="setMainTab('cloud')">File Management</button>
+        <div class="tab-sep"></div>
+        <button class="mtab project-tab hidden" id="mtab-project" onclick="setMainTab('project')">
+          <span id="mtab-project-label">Project</span>
+        </button>
+        <div class="main-actions">
+          <button class="action-btn start-all" onclick="runAction('start-all')">
+            <span class="pulse-dot" style="width:6px;height:6px;"></span> Start All
+          </button>
+          <button class="action-btn" onclick="runAction('restart-all')">
+            <i class="bi bi-arrow-clockwise"></i> Restart All
+          </button>
+          <button class="action-btn stop-all" onclick="runAction('stop-all')">■ Stop All</button>
+        </div>
+      </div>
+
+      <!-- ─── OVERVIEW PANEL ─── -->
+      <div class="panel active" id="mpanel-overview">
+        <div class="overview-grid" id="overviewGrid"></div>
+      </div>
+
+      <!-- ─── APP SETTINGS PANEL ─── -->
+      <div class="panel" id="mpanel-settings">
+        <div class="settings-scroll">
+          <div class="settings-inner">
+
+            <!-- Account -->
+            <div class="card">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px">
+                <div class="card-title" style="margin:0">
+                  <i class="bi bi-shield-lock"></i>
+                  Account & Security
+                </div>
+                <div class="dropdown-wrap" style="position:relative;">
+                  <button class="btn-ghost-sm" onclick="toggleDropdown('settingsMenu')" title="Settings" style="padding:6px 10px; font-size:16px; color:var(--gray-500); cursor:pointer;">
+                    <i class="bi bi-gear"></i>
+                  </button>
+                  <div class="dropdown-menu" id="settingsMenu" style="right:0; top:calc(100% + 8px); width:180px; padding:6px;">
+                    <input type="file" id="logoUploadInput" accept="image/*" style="display:none" onchange="uploadEnterpriseLogo(event)" />
+                    <button class="dropdown-item" onclick="document.getElementById('logoUploadInput').click()">
+                      <i class="bi bi-image" style="margin-right:8px; color:var(--gray-500);"></i> Change Logo
+                    </button>
+                    <button class="dropdown-item" onclick="removeEnterpriseLogo()">
+                      <i class="bi bi-x-circle" style="margin-right:8px; color:var(--red);"></i> Remove Logo
+                    </button>
+                    <button class="dropdown-item" onclick="document.getElementById('pwdFormWrapper').classList.toggle('hidden'); toggleDropdown('settingsMenu');">
+                      <i class="bi bi-lock" style="margin-right:8px; color:var(--gray-500);"></i> Change Password
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="info-grid">
+                <div class="info-cell"><div class="info-label">Username</div><div class="info-val" id="s-username">—</div></div>
+                <div class="info-cell"><div class="info-label">Organization</div><div class="info-val" id="s-org">—</div></div>
+                <div class="info-cell"><div class="info-label">CLI Command</div><div class="info-val mono" id="s-cli">—</div></div>
+                <div class="info-cell"><div class="info-label">Created At</div><div class="info-val" id="s-created">—</div></div>
+              </div>
+              
+              <div style="font-size:11px; text-align:right; color:var(--gray-500); margin-top:8px" id="logoUploadMsg"></div>
+
+              <div id="pwdFormWrapper" class="hidden pwd-form-wrap" style="margin-top:20px; padding-top:20px; border-top:1px solid var(--gray-100)">
+                <div class="sec-title" style="margin-bottom:16px">Change Password</div>
+                <div class="input-row" style="margin-bottom:16px">
+                  <input class="inp" id="curPwd" type="password" placeholder="Current password">
+                  <input class="inp" id="newPwd" type="password" placeholder="New password (min 8)">
+                  <input class="inp" id="confirmNewPwd" type="password" placeholder="Confirm new password">
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;justify-content:flex-end">
+                  <span id="pwdMsg" class="hidden"></span>
+                  <button class="btn btn-primary" onclick="changePwd()">Update Password</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- API Token -->
+            <div class="card">
+              <div class="card-title"><i class="bi bi-key"></i> API Token</div>
+              <p style="font-size:11px;color:var(--gray-400);margin-bottom:10px">JWT token expires in 7 days. Use for external API calls.</p>
+              <div class="token-row">
+                <div class="token-display" id="tokenDisplay">—</div>
+                <button class="btn btn-secondary" onclick="copyToken()">Copy</button>
+              </div>
+            </div>
+
+            <!-- Import Ecosystem Config -->
+            <div class="card full-span">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+                <div class="card-title" style="margin:0"><i class="bi bi-file-earmark-code"></i> Import ecosystem.config.js</div>
+                <button class="btn-ghost-sm" onclick="loadPm2Config()">
+                  <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+              </div>
+              <p style="font-size:11px;color:var(--gray-400);margin-bottom:12px">Paste an existing ecosystem config to bulk-import all projects.</p>
+              <div class="import-grid">
+                <div>
+                  <p style="font-size:11px;font-weight:600;color:var(--gray-600);margin-bottom:6px">Current Config</p>
+                  <textarea class="textarea" id="pm2ConfigView" style="height:160px" readonly></textarea>
+                </div>
+                <div>
+                  <p style="font-size:11px;font-weight:600;color:var(--gray-600);margin-bottom:6px">Import Config</p>
+                  <textarea class="textarea" id="importConfigArea" style="height:160px" placeholder="Paste module.exports = { apps: [...] } here…"></textarea>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;margin-top:10px">
+                <button class="btn btn-primary" onclick="importConfig()">Merge & Import</button>
+                <span id="importMsg" class="hidden"></span>
+              </div>
+            </div>
+
+            <!-- Danger Zone -->
+            <div class="card danger-card full-span">
+              <div class="card-title" style="color:var(--red);border-left:none;">
+                <i class="bi bi-exclamation-triangle"></i>
+                Danger Zone
+              </div>
+              <p style="font-size:12px;color:var(--red);margin-bottom:14px;line-height:1.5">Immediately stops all processes, deletes all configurations, and resets to factory default. <strong>This cannot be undone.</strong></p>
+              <button class="btn btn-danger" onclick="confirmReset()">Wipe Everything & Reset</button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── FILE MANAGEMENT PANEL (CLOUD) ─── -->
+      <div class="panel" id="mpanel-cloud">
+        <div class="settings-scroll">
+          <div style="padding: 24px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+              <div>
+                <h1 style="font-size:20px; font-weight:700; color:var(--gray-900);">Cloud Storage</h1>
+                <p style="font-size:13px; color:var(--gray-500); margin-top:4px;">Shared images and assets</p>
+              </div>
+              <div>
+                <input type="file" id="cloudUploadInput" multiple accept="image/*" style="display:none" onchange="uploadCloudFiles(event)" />
+                <button class="btn btn-primary" style="display:flex; align-items:center; gap:8px;" onclick="document.getElementById('cloudUploadInput').click()">
+                  <i class="bi bi-plus-lg"></i> Upload Files
+                </button>
+              </div>
+            </div>
+            
+            <div id="cloudLoading" style="display:none; text-align:center; padding: 40px; color:var(--gray-400);">Loading...</div>
+            
+            <div id="cloudEmpty" style="display:none; text-align:center; padding: 60px 20px; background:var(--white); border-radius:12px; border:1px solid var(--gray-150);">
+              <i class="bi bi-image" style="font-size:32px; color:var(--gray-300); margin-bottom:12px; display:block;"></i>
+              <h3 style="font-size:14px; font-weight:700; margin-bottom:4px;">No files found</h3>
+              <p style="font-size:12px; color:var(--gray-500); margin-bottom:16px;">Start by uploading your first image</p>
+              <button class="btn-ghost" style="background:var(--gray-900); color:white;" onclick="document.getElementById('cloudUploadInput').click()">Upload File</button>
+            </div>
+
+            <div id="cloudGrid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px;">
+              <!-- Grid items rendered here -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── PROJECT VIEW PANEL ─── -->
+      <div class="panel" id="mpanel-project">
+        <div class="pv-header">
+          <div class="pv-title">
+            <div class="dot-status dot-stopped" id="pv-dot"></div>
+            <h2 class="pv-name" id="pv-name">—</h2>
+            <span class="pv-status-text" id="pv-status-text" style="transition: color 0.2s">stopped</span>
+          </div>
+          <div class="pv-btns">
+            <button class="pv-btn start" onclick="runAction('start', currentSelectedProject)">▶ Start</button>
+            <button class="pv-btn restart" onclick="runAction('restart', currentSelectedProject)">↺ Restart</button>
+            <button class="pv-btn stop" onclick="runAction('stop', currentSelectedProject)">■ Stop</button>
+          </div>
+        </div>
+        <div class="pv-tabs">
+          <button class="ptab active" id="ptab-dashboard" onclick="setProjectSubTab('dashboard')">Dashboard</button>
+          <button class="ptab" id="ptab-logs" onclick="setProjectSubTab('logs')">Logs</button>
+          <button class="ptab" id="ptab-terminal" onclick="setProjectSubTab('terminal')">Terminal</button>
+          <button class="ptab" id="ptab-config" onclick="setProjectSubTab('config')">Project Settings</button>
+        </div>
+        <div class="pv-body">
+
+          <!-- Project Dashboard -->
+          <div id="pview-dashboard" style="overflow-y:auto;height:100%">
+            <div class="metrics-grid" id="pv-metrics" style="padding-bottom:12px;"></div>
+            
+            <div style="padding: 0 24px 24px; display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
+              <!-- Main Performance Chart -->
+              <div class="card" style="padding:24px; display:flex; flex-direction:column; height:320px;">
+                <div style="display:flex; justify-content:space-between; width:100%; margin-bottom:16px;">
+                  <div>
+                    <div style="font-size:15px; font-weight:700; color:var(--black); margin-bottom:4px"><i class="bi bi-graph-up-arrow" style="color:#3b82f6;margin-right:6px"></i> Performance Real-time</div>
+                    <div style="font-size:12px; color:var(--gray-400)">CPU (purple) &amp; Memory (orange) Timeline</div>
+                  </div>
+                </div>
+                <div style="flex:1; width:100%; position:relative;">
+                  <canvas id="perfChart"></canvas>
+                </div>
+              </div>
+
+              <!-- Health Assessment & Traffic -->
+              <div style="display:flex; flex-direction:column; gap:20px;">
+                <!-- Health Score -->
+                <div class="card" style="padding:24px; display:flex; flex-direction:column; justify-content:center; flex:1">
+                  <div style="font-size:13px; font-weight:700; color:var(--gray-500); text-transform:uppercase; letter-spacing:.05em; margin-bottom:12px;"><i class="bi bi-heart-pulse-fill" style="color:#ef4444;margin-right:4px"></i> App Health Index</div>
+                  <div style="display:flex; align-items:flex-end; gap:8px; margin-bottom:12px;">
+                    <div style="font-size:48px; font-weight:800; line-height:1; color:#22c55e" id="hlthScore">100</div>
+                    <div style="font-size:16px; font-weight:700; color:var(--gray-400); padding-bottom:6px;">/ 100</div>
+                  </div>
+                  <div style="font-size:13px; color:var(--gray-500); line-height:1.5" id="hlthText">Cấu trúc tải trọng cực kỳ lý tưởng.</div>
+                </div>
+                <!-- Traffic -->
+                <div class="card" style="padding:24px; display:flex; flex-direction:column; justify-content:center;">
+                  <div style="font-size:13px; font-weight:700; color:var(--gray-500); text-transform:uppercase; letter-spacing:.05em; margin-bottom:16px;"><i class="bi bi-globe2" style="color:#8b5cf6;margin-right:4px"></i> Network Traffic</div>
+                  <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
+                    <div>
+                      <div style="font-size:11px; color:var(--gray-400); font-weight:600; text-transform:uppercase; margin-bottom:2px">Simulated Req</div>
+                      <div style="font-size:22px; font-weight:800; color:var(--black)" id="reqTotal">N/A</div>
+                    </div>
+                    <div style="text-align:right">
+                      <div style="font-size:11px; color:var(--gray-400); font-weight:600; text-transform:uppercase; margin-bottom:2px">Avg Latency</div>
+                      <div style="font-size:22px; font-weight:800; color:#3b82f6" id="reqLatency">—</div>
+                    </div>
+                  </div>
+                  <div style="font-size:11px; color:var(--gray-400); font-style:italic">* Integrates PM2 APM Metrics module.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Project Logs -->
+          <div id="pview-logs" class="log-full hidden">
+            <div class="log-full-head">
+              <span class="log-full-label"><span class="pulse-dot"></span>Streaming Logs</span>
+              <button class="btn-ghost-sm" style="color:#4b5563" onclick="clearProjectLogs()">Clear</button>
+            </div>
+            <div class="log-full-stream" id="pv-logStream"></div>
+          </div>
+
+          <!-- Project Terminal -->
+          <div id="pview-terminal" class="term-wrap hidden" style="margin:20px; height:calc(100% - 40px)">
+            <div class="term-out" id="termOutput"></div>
+            <div class="term-in">
+              <span class="term-prompt">❯</span>
+              <input type="text" class="term-input" id="termInput" placeholder="Enter shell command…" onkeydown="handleKey(event)">
+              <button class="term-btn" onclick="clearTerm()">
+                <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg> Clear
+              </button>
+            </div>
+          </div>
+
+          <!-- Project Settings -->
+          <div id="pview-config" class="hidden pv-settings">
+            <div class="pv-settings-inner">
+              <form id="editForm" onsubmit="submitEditProject(event)">
+
+                <div class="form-section">
+                  <div class="form-section-title">
+                    <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+                    Directory
+                  </div>
+                  <div class="form-row">
+                    <div class="form-field">
+                      <label>Working Directory (cwd) *</label>
+                      <input class="inp mono w-full" id="p-cwd" required placeholder="/path/to/project">
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-section">
+                  <div class="form-section-title">
+                    <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg>
+                    Run Command
+                  </div>
+                  <div class="form-row cols-2">
+                    <div class="form-field">
+                      <label>Script</label>
+                      <input class="inp mono w-full" id="p-script" placeholder="npm">
+                    </div>
+                    <div class="form-field">
+                      <label>Arguments</label>
+                      <input class="inp mono w-full" id="p-args" placeholder="run dev">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Source Env Files -->
+                <div class="form-section">
+                  <div class="form-section-title">
+                    <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                    Source Env Files
+                    <span style="font-weight:400;font-size:10px;color:var(--gray-400);text-transform:none;margin-left:4px">Phát hiện file .env trong thư mục — Preview và import vào PM2 env</span>
+                  </div>
+                  <div id="p-env-file-list" class="env-file-list">
+                    <span class="env-file-empty">Chưa phát hiện file .env nào</span>
+                  </div>
+                </div>
+
+                <!-- Environment Variables -->
+                <div class="form-section">
+                  <div class="form-section-title">
+                    <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+                    Environment Variables
+                    <span style="font-weight:400;font-size:10px;color:var(--gray-400);text-transform:none;margin-left:4px">Truyền thẳng vào process (PM2 env)</span>
+                  </div>
+                  <div id="p-env-vars-list" class="env-vars-list"></div>
+                  <button type="button" class="btn-ghost-sm" onclick="addEnvVarRow('','',false)" style="font-size:12px">
+                    <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    Add Variable
+                  </button>
+                </div>
+
+                <div class="form-section">
+                  <div class="form-section-title">
+                    <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                    Process Mode
+                  </div>
+                  <div class="form-row cols-2">
+                    <div class="form-field">
+                      <label>Execution Mode</label>
+                      <div class="exec-mode-group">
+                        <button type="button" class="exec-mode-btn selected" id="em-fork" onclick="setExecMode('fork')">Fork</button>
+                        <button type="button" class="exec-mode-btn" id="em-cluster" onclick="setExecMode('cluster')">Cluster</button>
+                      </div>
+                      <input type="hidden" id="p-exec-mode" value="fork">
+                    </div>
+                    <div class="form-field" id="instances-field">
+                      <label>Workers (instances)</label>
+                      <input class="inp mono w-full" id="p-instances" type="number" min="1" placeholder="1" value="1">
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-section">
+                  <div class="form-section-title">
+                    <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                    Resource Limits & Timing
+                  </div>
+
+                  <!-- Max Memory -->
+                  <div class="limit-row">
+                    <div class="limit-left">
+                      <label class="toggle toggle-sm">
+                        <input type="checkbox" id="p-max-memory-on" onchange="toggleLimitField('max-memory')">
+                        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                      </label>
+                      <div class="limit-info">
+                        <span class="limit-name">Max Memory Restart</span>
+                        <span class="limit-desc">Tự restart khi dùng quá giới hạn RAM</span>
+                      </div>
+                    </div>
+                    <div class="limit-control" id="limit-control-max-memory">
+                      <input type="number" id="p-max-memory-val" class="inp mono limit-inp" placeholder="512" min="1">
+                      <select id="p-max-memory-unit" class="inp limit-unit">
+                        <option value="M">MB</option>
+                        <option value="G">GB</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <!-- Kill Timeout -->
+                  <div class="limit-row">
+                    <div class="limit-left">
+                      <label class="toggle toggle-sm">
+                        <input type="checkbox" id="p-kill-timeout-on" onchange="toggleLimitField('kill-timeout')">
+                        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                      </label>
+                      <div class="limit-info">
+                        <span class="limit-name">Kill Timeout</span>
+                        <span class="limit-desc">Thời gian chờ trước khi force kill (ms)</span>
+                      </div>
+                    </div>
+                    <div class="limit-control" id="limit-control-kill-timeout">
+                      <input type="number" id="p-kill-timeout-val" class="inp mono limit-inp" placeholder="3000" min="0" step="500">
+                      <span class="limit-unit-label">ms</span>
+                    </div>
+                  </div>
+
+                  <!-- Restart Delay -->
+                  <div class="limit-row">
+                    <div class="limit-left">
+                      <label class="toggle toggle-sm">
+                        <input type="checkbox" id="p-restart-delay-on" onchange="toggleLimitField('restart-delay')">
+                        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                      </label>
+                      <div class="limit-info">
+                        <span class="limit-name">Restart Delay</span>
+                        <span class="limit-desc">Chờ trước khi restart sau khi crash (ms)</span>
+                      </div>
+                    </div>
+                    <div class="limit-control" id="limit-control-restart-delay">
+                      <input type="number" id="p-restart-delay-val" class="inp mono limit-inp" placeholder="0" min="0" step="500">
+                      <span class="limit-unit-label">ms</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-section">
+                  <div class="form-section-title">Options</div>
+                  <div class="toggles-row">
+                    <label class="toggle">
+                      <input type="checkbox" id="p-autorestart">
+                      <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                      <span class="toggle-label">Auto Restart</span>
+                    </label>
+                    <label class="toggle">
+                      <input type="checkbox" id="p-watch">
+                      <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                      <span class="toggle-label">Watch Mode</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="form-section">
+                  <div class="form-section-title">
+                    <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                    Upload Ecosystem Config
+                  </div>
+                  <input type="file" id="ecoFileInput" accept=".js,.json" style="display:none" onchange="handleEcoFileSelect(event)">
+                  <div class="upload-zone" id="uploadZone" onclick="document.getElementById('ecoFileInput').click()">
+                    <span class="upload-zone-text" id="uploadZoneText">Click to upload ecosystem.config.js — config will be merged automatically</span>
+                  </div>
+                  <div style="display:flex;gap:8px;margin-top:8px">
+                    <button type="button" class="btn btn-secondary" id="ecoUploadBtn" onclick="uploadProjectEcosystem()" style="display:none">Upload & Sync</button>
+                    <button type="button" class="btn-ghost-sm" id="ecoViewBtn" onclick="viewProjectEcosystem()" style="display:none">View current file</button>
+                  </div>
+                </div>
+
+                <div style="padding-top:4px;border-top:1px solid var(--gray-100);margin-top:4px;display:flex;align-items:center;gap:10px">
+                  <button type="submit" class="btn btn-primary">Save Project Settings</button>
+                  <span id="editMsg" class="hidden"></span>
+                </div>
+              </form>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- ─── ADD PROJECT MODAL ─── -->
+<div id="addModal" class="modal-backdrop">
+  <div class="modal modal-lg">
+
+    <!-- Header -->
+    <div class="modal-head">
+      <span class="modal-title">Add Project</span>
+      <button class="modal-close" onclick="closeModal('addModal')">
+        <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <!-- Step 1: Directory (always visible, sticky) -->
+    <div class="add-dir-step">
+      <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-500);margin-bottom:6px">
+        <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display:inline-block;vertical-align:-1px;margin-right:4px"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+        Target Directory *
+      </label>
+      <div style="display:flex;gap:6px">
+        <input id="f-cwd" required placeholder="/Users/dev/my-app" class="inp mono" style="flex:1"
+          onblur="onCwdChange(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();onCwdChange(this.value)}">
+        <button type="button" class="btn btn-secondary" onclick="openFolderBrowser()">
+          <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+          Browse
+        </button>
+      </div>
+      <div id="f-dir-status" style="margin-top:7px;font-size:11px;color:var(--gray-400)">Chọn thư mục để tự động phát hiện framework &amp; file env.</div>
+    </div>
+
+    <!-- Step 2: Details (revealed after dir selected) -->
+    <div class="modal-body add-detail-step" id="addDetailStep">
+      <form id="addForm" onsubmit="submitProject(event)">
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+          <div class="form-field">
+            <label>Project Name *</label>
+            <input id="f-name" required placeholder="my-api" class="inp w-full">
+          </div>
+          <div class="form-field dropdown-wrap">
+            <label>Category</label>
+            <input type="hidden" id="f-type" value="Frontend">
+            <button type="button" class="dropdown-btn" onclick="toggleDropdown('typeMenu')">
+              <span id="f-type-label">Frontend</span>
+              <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <div class="dropdown-menu" id="typeMenu">
+              <div class="dropdown-opt" onclick="selectOpt('f-type','Frontend','typeMenu')">Frontend</div>
+              <div class="dropdown-opt" onclick="selectOpt('f-type','Backend','typeMenu')">Backend</div>
+              <div class="dropdown-opt" onclick="selectOpt('f-type','Fullstack','typeMenu')">Fullstack</div>
+              <div class="dropdown-opt" onclick="selectOpt('f-type','Service','typeMenu')">Service</div>
+              <div class="dropdown-opt" onclick="selectOpt('f-type','Other','typeMenu')">Other</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Run Command -->
+        <div style="background:var(--gray-50);border:1px solid var(--gray-150);border-radius:9px;padding:12px;margin-bottom:12px">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-500);margin-bottom:8px">Run Command</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+            <div class="form-field">
+              <label>Script</label>
+              <input id="f-script" placeholder="npm" value="npm" class="inp mono w-full">
+            </div>
+            <div class="form-field">
+              <label>Arguments</label>
+              <input id="f-args" placeholder="run dev" value="run dev" class="inp mono w-full">
+            </div>
+          </div>
+          <div class="form-field dropdown-wrap">
+            <label>Framework</label>
+            <input type="hidden" id="f-framework" value="Other">
+            <button type="button" class="dropdown-btn" onclick="toggleDropdown('fwMenu')">
+              <span id="f-framework-label">Auto-detect / Other</span>
+              <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <div class="dropdown-menu" id="fwMenu" style="bottom:calc(100% - 60px);top:auto">
+              <div class="dropdown-opt" onclick="selectOpt('f-framework','Next.js','fwMenu')">Next.js</div>
+              <div class="dropdown-opt" onclick="selectOpt('f-framework','React','fwMenu')">React</div>
+              <div class="dropdown-opt" onclick="selectOpt('f-framework','Vue.js','fwMenu')">Vue.js</div>
+              <div class="dropdown-opt" onclick="selectOpt('f-framework','Vite','fwMenu')">Vite</div>
+              <div class="dropdown-opt" onclick="selectOpt('f-framework','NuxtJS','fwMenu')">NuxtJS</div>
+              <div class="dropdown-opt" onclick="selectOpt('f-framework','Express','fwMenu')">Express</div>
+              <div class="dropdown-opt" onclick="selectOpt('f-framework','NestJS','fwMenu')">NestJS</div>
+              <div class="dropdown-opt" onclick="selectOpt('f-framework','Rails','fwMenu')">Rails</div>
+              <div class="dropdown-opt" onclick="selectOpt('f-framework','Django','fwMenu')">Django</div>
+              <div class="dropdown-opt" onclick="selectOpt('f-framework','FastAPI','fwMenu')">FastAPI</div>
+              <div class="dropdown-opt" onclick="selectOpt('f-framework','Other','fwMenu')">Other</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Source env files -->
+        <div style="margin-bottom:12px">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-500);margin-bottom:6px">Source Env Files</div>
+          <div id="f-env-file-list" class="env-file-list">
+            <span class="env-file-empty">Chọn thư mục để tự động tìm file .env</span>
+          </div>
+        </div>
+
+        <!-- Env variables -->
+        <div style="margin-bottom:12px">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-500);margin-bottom:6px">Environment Variables</div>
+          <div id="f-env-vars-list" class="env-vars-list"></div>
+          <button type="button" class="btn-ghost-sm" onclick="addEnvVarRow('','',true)" style="font-size:12px">
+            <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Add Variable
+          </button>
+        </div>
+
+        <!-- Options -->
+        <div class="toggles-row">
+          <label class="toggle">
+            <input type="checkbox" id="f-autorestart" checked>
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+            <span class="toggle-label">Auto Restart</span>
+          </label>
+          <label class="toggle">
+            <input type="checkbox" id="f-watch">
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+            <span class="toggle-label">Watch Mode</span>
+          </label>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- Sticky footer -->
+    <div class="modal-footer add-detail-step" id="addModalFooter">
+      <div id="addErrMsg" class="msg-err hidden" style="margin-bottom:8px"></div>
+      <button type="submit" form="addForm" class="btn btn-primary w-full" style="justify-content:center;padding:10px">Add Project</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ─── FOLDER BROWSER MODAL ─── -->
+<div id="browserModal" class="modal-backdrop">
+  <div class="modal" style="height:520px;display:flex;flex-direction:column;max-height:80vh">
+    <div class="modal-head">
+      <span class="modal-title">Select Folder</span>
+      <button class="modal-close" onclick="closeModal('browserModal')">
+        <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div style="padding:12px 16px;flex:1;display:flex;flex-direction:column;overflow:hidden">
+      <div class="browser-path" id="browserPath"></div>
+      <div class="browser-list" id="browserList"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" style="flex:1;justify-content:center" onclick="closeModal('browserModal')">Cancel</button>
+      <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="selectCurrentDir()">Use This Path</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── CONFIRM MODAL ─── -->
+<div id="confirmModal" class="modal-backdrop">
+  <div class="modal confirm-modal">
+    <div class="modal-head">
+      <span class="modal-title" id="confirmTitle">Confirm</span>
+      <button class="modal-close" onclick="closeConfirm()">
+        <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--gray-600);line-height:1.5" id="confirmMessage"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" style="flex:1;justify-content:center" onclick="closeConfirm()">Cancel</button>
+      <button class="btn" id="confirmActionBtn" style="flex:1;justify-content:center" onclick="executeConfirm()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── ECOSYSTEM VIEW MODAL ─── -->
+<div id="ecoViewModal" class="modal-backdrop">
+  <div class="modal modal-lg">
+    <div class="modal-head">
+      <span class="modal-title" id="ecoViewTitle">Ecosystem Config</span>
+      <button class="modal-close" onclick="closeModal('ecoViewModal')">
+        <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <textarea class="textarea w-full" id="ecoViewContent" style="height:320px" readonly></textarea>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeModal('ecoViewModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── Auth ───
+const TOKEN_KEY = 'da_token';
+function getToken() { return localStorage.getItem(TOKEN_KEY) || ''; }
+function authHeaders() { return { 'Content-Type': 'application/json', 'Authorization': getToken() }; }
+function logout() { localStorage.removeItem(TOKEN_KEY); window.location.href = '/'; }
+
+async function api(method, path, body) {
+  const r = await fetch(path, { method, headers: authHeaders(), body: body ? JSON.stringify(body) : undefined });
+  if (r.status === 401) { logout(); throw new Error('Unauthorized'); }
+  return r.json();
+}
+
+// ─── Toast ───
+let toastTimer;
+function toast(msg, type = 'ok') {
+  const el = document.getElementById('toast');
+  const icon = type === 'ok' ? '<i class="bi bi-check-circle-fill"></i>' : 
+               type === 'err' ? '<i class="bi bi-x-circle-fill"></i>' :
+               type === 'warn' ? '<i class="bi bi-exclamation-triangle-fill"></i>' :
+               '<i class="bi bi-info-circle-fill"></i>';
+  el.innerHTML = `${icon} <span>${msg}</span>`;
+  el.className = `toast show toast-${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+// ─── Confirm Modal ───
+let confirmCb = null;
+function showConfirm(title, message, cb, isDanger = false) {
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmMessage').textContent = message;
+  const btn = document.getElementById('confirmActionBtn');
+  btn.className = `btn ${isDanger ? 'btn-danger' : 'btn-primary'}`;
+  btn.textContent = isDanger ? 'Delete' : 'Confirm';
+  confirmCb = cb;
+  document.getElementById('confirmModal').classList.add('open');
+}
+function executeConfirm() { if (confirmCb) confirmCb(); closeConfirm(); }
+function closeConfirm() { document.getElementById('confirmModal').classList.remove('open'); confirmCb = null; }
+
+// ─── Modals ───
+function openAddModal() {
+  // Reset to step 1 state
+  document.getElementById('addDetailStep').classList.remove('visible');
+  document.getElementById('addModalFooter').classList.remove('visible');
+  document.getElementById('f-cwd').value = '';
+  document.getElementById('f-dir-status').innerHTML = 'Chọn thư mục để tự động phát hiện framework &amp; file env.';
+  document.getElementById('f-dir-status').style.color = 'var(--gray-400)';
+  document.getElementById('addModal').classList.add('open');
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function revealAddDetails() {
+  document.getElementById('addDetailStep').classList.add('visible');
+  document.getElementById('addModalFooter').classList.add('visible');
+}
+
+async function onCwdChange(val) {
+  val = val.trim();
+  if (!val) return;
+  const status = document.getElementById('f-dir-status');
+  status.style.color = 'var(--gray-400)';
+  status.textContent = 'Đang phân tích…';
+  revealAddDetails();
+  // Auto-set project name from folder name if empty
+  const folderName = val.split('/').filter(Boolean).pop() || '';
+  if (!document.getElementById('f-name').value && folderName) {
+    document.getElementById('f-name').value = folderName;
+  }
+  await Promise.all([
+    autoDetectConfig(val),
+    scanEnvFiles(val, true),
+  ]);
+  status.style.color = 'var(--green)';
+  status.innerHTML = `<svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg> ${esc(val)}`;
+}
+
+// ─── State ───
+let projects = [];
+let ws, browserCurrentPath;
+let currentSelectedProject = null;
+let rawTokens = {};
+let pendingEcoFileContent = null;
+
+let chartData = {};
+let perfChartObj = null;
+
+function updateChartLive(p) {
+  if (!chartData[p.name]) chartData[p.name] = { cpu: Array(20).fill(0), mem: Array(20).fill(0) };
+  let h = chartData[p.name];
+  h.cpu.push(p.cpu || 0); h.cpu.shift();
+  h.mem.push((p.memory||0)/(1024*1024)); h.mem.shift();
+
+  if (document.getElementById('pview-dashboard').classList.contains('hidden')) return;
+
+  const ctx = document.getElementById('perfChart');
+  if (!ctx) return;
+  if (!perfChartObj) {
+    perfChartObj = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: Array(20).fill(''),
+        datasets: [
+          { label: 'CPU %', data: h.cpu, borderColor: '#a855f7', backgroundColor: 'rgba(168,85,247,0.1)', fill: true, tension: 0.4 },
+          { label: 'Memory (MB)', data: h.mem, borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)', fill: true, tension: 0.4, yAxisID: 'y1' }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        animation: { duration: 0 },
+        scales: {
+          y: { min: 0, suggestedMax: 100 },
+          y1: { position: 'right', min: 0 }
+        },
+        plugins: { legend: { display: false } }
+      }
+    });
+  } else {
+    perfChartObj.data.datasets[0].data = h.cpu;
+    perfChartObj.data.datasets[1].data = h.mem;
+    perfChartObj.update();
+  }
+}
+let execMode = 'fork';
+
+// ─── Init ───
+async function init() {
+  const me = await api('GET', '/api/me');
+  if (me.error) { logout(); return; }
+  
+  if (me.logoUrl) {
+    const logoEl = document.querySelector('.topbar-logo');
+    logoEl.innerHTML = `<img src="${me.logoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:6px;" />`;
+    logoEl.style.background = 'transparent';
+  }
+  
+  const navStr = `@${me.orgName}/${me.cliName}`;
+  document.getElementById('navPkg').textContent = navStr;
+  const menuPkg = document.getElementById('navPkgMenu');
+  if (menuPkg) menuPkg.textContent = navStr;
+  const topTitle = document.getElementById('topbarTitle');
+  if (topTitle) topTitle.textContent = me.cliName.toUpperCase();
+  
+  document.getElementById('s-username').textContent = me.username;
+  document.getElementById('s-org').textContent = me.orgName;
+  document.getElementById('s-cli').textContent = me.cliName;
+  document.getElementById('s-created').textContent = me.createdAt ? new Date(me.createdAt).toLocaleDateString() : '—';
+  document.getElementById('tokenDisplay').textContent = getToken();
+  loadProjects();
+  checkPm2();
+  loadSysInfo();
+  loadPm2Config();
+  initWS();
+}
+
+// ─── WebSocket ───
+function initWS() {
+  ws = new WebSocket(`ws://${location.host}?token=${encodeURIComponent(getToken())}`);
+  ws.onopen = () => appendTerm('\x1b[32mShell connected.\x1b[0m\r\n');
+  ws.onmessage = e => {
+    const msg = JSON.parse(e.data);
+    if (msg.type === 'terminal') appendTerm(msg.data);
+    else if (msg.type === 'log') appendGlobalLog(msg.data);
+    else if (msg.type === 'project_log' && msg.project === currentSelectedProject) appendProjectLog(msg.data);
+    else if (msg.type === 'term_out' && currentSelectedProject === msg.project) appendTerm(msg.data);
+    else if (msg.type === 'refresh') {
+      // Only refresh sidebar list + metrics — never touch form/settings content
+      loadProjects();
+    }
+    else if (msg.type === 'reset') { localStorage.removeItem(TOKEN_KEY); window.location.href = '/setup'; }
+  };
+  ws.onclose = () => appendTerm('\r\n\x1b[31m[Shell disconnected]\x1b[0m\r\n');
+}
+
+// ─── ANSI ───
+function ansiToHtml(raw) {
+  const C = {'30':'#6b7280','31':'#ef4444','32':'#22c55e','33':'#eab308','34':'#3b82f6','35':'#a855f7','36':'#06b6d4','37':'#f3f4f6','90':'#9ca3af','91':'#f87171','92':'#4ade80','93':'#facc15','94':'#60a5fa','95':'#c084fc','96':'#22d3ee','97':'#ffffff'};
+  let out='', cur=null;
+  const parts = raw.split(/\x1b\[([0-9;]*)m/);
+  for (let i=0;i<parts.length;i++) {
+    if (i%2===0) {
+      const safe = parts[i].replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      out += cur ? `<span style="color:${cur}">${safe}</span>` : safe;
+    } else {
+      if (parts[i]==='0'||parts[i]==='') cur=null;
+      else { for (const c of parts[i].split(';')) if (C[c]) { cur=C[c]; break; } }
+    }
+  }
+  return out;
+}
+
+function appendTerm(raw) {
+  const el = document.getElementById('termOutput');
+  const s = document.createElement('span');
+  s.innerHTML = ansiToHtml(raw.replace(/\r\n/g,'\n').replace(/\r/g,'\n'));
+  el.appendChild(s); el.scrollTop = el.scrollHeight;
+}
+function clearTerm() { document.getElementById('termOutput').innerHTML = ''; }
+function handleKey(e) {
+  if (e.key === 'Enter') {
+    const v = e.target.value; if (!v.trim()) return;
+    if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type:'terminal_input', data: v+'\n' }));
+    appendTerm(`\x1b[90m$ ${v}\x1b[0m\n`);
+    e.target.value = '';
+  }
+}
+function appendGlobalLog(text) {
+  const el = document.getElementById('globalLogStream');
+  if (el) { el.textContent += text; el.scrollTop = el.scrollHeight; }
+}
+function clearGlobalLog() { 
+  const el = document.getElementById('globalLogStream');
+  if (el) el.textContent = ''; 
+}
+function appendProjectLog(raw) {
+  const el = document.getElementById('pv-logStream');
+  const s = document.createElement('span');
+  s.innerHTML = ansiToHtml(raw.replace(/\r\n/g,'\n').replace(/\r/g,'\n'));
+  el.appendChild(s); el.scrollTop = el.scrollHeight;
+}
+function clearProjectLogs() { document.getElementById('pv-logStream').innerHTML = ''; }
+
+// ─── Navigation ───
+function setSideTab(tab) {
+  ['projects','logs'].forEach(t => {
+    document.getElementById(`spanel-${t}`).classList.toggle('active', t===tab);
+    document.getElementById(`stab-${t}`).classList.toggle('active', t===tab);
+  });
+}
+
+function setMainTab(tab) {
+  ['overview','settings','cloud','project'].forEach(t => {
+    const p = document.getElementById(`mpanel-${t}`);
+    const m = document.getElementById(`mtab-${t}`);
+    if (p) p.classList.toggle('active', t===tab);
+    if (m) m.classList.toggle('active', t===tab);
+  });
+  if (tab === 'overview') renderOverview();
+  if (tab === 'settings') loadPm2Config();
+  if (tab === 'cloud') loadCloudFiles();
+  if (tab === 'project' && currentSelectedProject) renderProjectView();
+}
+
+// ─── Projects ───
+async function loadProjects() {
+  projects = await api('GET', '/api/projects');
+  renderProjectList();
+  renderOverview();
+  if (currentSelectedProject) {
+    const still = projects.find(p => p.name === currentSelectedProject);
+    if (!still) {
+      currentSelectedProject = null;
+      document.getElementById('mtab-project').classList.add('hidden');
+      setMainTab('overview');
+    } else {
+      // Only update metrics (status/CPU/memory) — do NOT reset form/env state
+      _renderProjectMetrics(still);
+    }
+  }
+}
+
+function statusDotClass(s) {
+  return { online: 'dot-online', stopped: 'dot-stopped', errored: 'dot-errored', launching: 'dot-launching' }[s] || 'dot-stopped';
+}
+function typeClass(t) {
+  return `type-${t||'Other'}`;
+}
+function memFmt(b) { return b > 0 ? (b/1024/1024).toFixed(1)+' MB' : '—'; }
+function timeFmt(ms) { if(!ms) return '0s'; let s=Math.floor((Date.now()-ms)/1000); let m=Math.floor(s/60); s%=60; let h=Math.floor(m/60); m%=60; let d=Math.floor(h/24); h%=24; if(d>0)return`${d}d ${h}h`; if(h>0)return`${h}h ${m}m`; if(m>0)return`${m}m ${s}s`; return`${s}s`; }
+
+function renderProjectList() {
+  const list = document.getElementById('projectList');
+  const empty = document.getElementById('projectEmpty');
+  if (!projects.length) { list.innerHTML = ''; empty.classList.remove('hidden'); return; }
+  empty.classList.add('hidden');
+  list.innerHTML = projects.map(p => `
+    <div class="proj-item${p.name===currentSelectedProject?' selected':''}" onclick="selectProject('${esc(p.name)}')">
+      <div class="proj-row">
+        <div class="dot-status ${statusDotClass(p.status)}"></div>
+        <span class="proj-name">${esc(p.name)}</span>
+        <span class="proj-type ${typeClass(p.type)}">${p.type||'Other'}</span>
+      </div>
+      <div class="proj-meta">
+        <span style="color:${p.status==='online'?'#22c55e':(p.status==='errored'?'#ef4444':'var(--gray-400)')}">${p.status||'stopped'}</span>
+        ${p.memory > 0 ? `<span>· ${memFmt(p.memory)}</span>` : ''}
+        ${p.cpu > 0 ? `<span>· ${p.cpu}%</span>` : ''}
+      </div>
+      <div class="proj-actions">
+        <button class="pa-btn start" onclick="event.stopPropagation();runAction('start','${esc(p.name)}')">▶</button>
+        <button class="pa-btn restart" onclick="event.stopPropagation();runAction('restart','${esc(p.name)}')">↺</button>
+        <button class="pa-btn stop" onclick="event.stopPropagation();runAction('stop','${esc(p.name)}')">■</button>
+        <button class="pa-btn del" onclick="event.stopPropagation();deleteProject('${esc(p.name)}')">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function renderOverview() {
+  const el = document.getElementById('overviewGrid');
+  if (!projects.length) {
+    el.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><svg width="40" height="40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg><span>No projects yet. Add one to get started.</span></div>';
+    return;
+  }
+  el.innerHTML = projects.map(p => `
+    <div class="ov-card" onclick="selectProject('${esc(p.name)}')" style="cursor:pointer">
+      <div class="ov-card-head">
+        <div class="dot-status ${statusDotClass(p.status)}"></div>
+        <span class="ov-name">${esc(p.name)}</span>
+        <span class="proj-type ${typeClass(p.type)}">${p.type||'Other'}</span>
+        <span class="ov-status" style="color:${p.status==='online'?'#22c55e':(p.status==='errored'?'#ef4444':'var(--gray-400)')}">${p.status||'stopped'}</span>
+      </div>
+      <div class="ov-path" title="${esc(p.cwd)}">${esc(p.cwd)}</div>
+      <div class="ov-stats">
+        <div class="ov-stat"><div class="ov-stat-label">Memory</div><div class="ov-stat-val">${memFmt(p.memory)}</div></div>
+        <div class="ov-stat"><div class="ov-stat-label">CPU</div><div class="ov-stat-val">${p.cpu||0}%</div></div>
+        <div class="ov-stat"><div class="ov-stat-label">PID</div><div class="ov-stat-val">${p.pid||'—'}</div></div>
+      </div>
+      <div class="ov-actions">
+        <button class="ov-btn" onclick="event.stopPropagation();runAction('start','${esc(p.name)}')">▶ Start</button>
+        <button class="ov-btn" onclick="event.stopPropagation();runAction('restart','${esc(p.name)}')">↺ Restart</button>
+        <button class="ov-btn" onclick="event.stopPropagation();runAction('stop','${esc(p.name)}')">■ Stop</button>
+      </div>
+    </div>`).join('');
+}
+
+// ─── Project selection ───
+function selectProject(name) {
+  const p = projects.find(x => x.name === name);
+  if (!p) return;
+  currentSelectedProject = name;
+  document.getElementById('mtab-project').classList.remove('hidden');
+  document.getElementById('mtab-project-label').textContent = name;
+  renderProjectList();
+  setMainTab('project'); // calls renderProjectView() internally
+  setProjectSubTab('dashboard');
+}
+
+// Full render — called only when explicitly selecting a project
+function renderProjectView() {
+  const p = projects.find(x => x.name === currentSelectedProject);
+  if (!p) return;
+  _renderProjectMetrics(p);
+  // Fill settings form (only on full render, never on WS refresh)
+  document.getElementById('p-cwd').value = p.cwd || '';
+  document.getElementById('p-script').value = p.script || 'npm';
+  document.getElementById('p-args').value = p.args || 'run dev';
+  document.getElementById('p-autorestart').checked = p.autorestart !== false;
+  document.getElementById('p-watch').checked = p.watch === true;
+  // Max memory — parse e.g. "512M" or "2G"
+  const mem = p.max_memory_restart || '';
+  const memMatch = mem.match(/^(\d+)(M|G)$/i);
+  const memOn = !!memMatch;
+  document.getElementById('p-max-memory-on').checked = memOn;
+  document.getElementById('p-max-memory-val').value = memMatch ? memMatch[1] : '512';
+  document.getElementById('p-max-memory-unit').value = memMatch ? memMatch[2].toUpperCase() : 'M';
+  document.getElementById('limit-control-max-memory').classList.toggle('active', memOn);
+  // Kill timeout
+  const ktOn = !!p.kill_timeout;
+  document.getElementById('p-kill-timeout-on').checked = ktOn;
+  document.getElementById('p-kill-timeout-val').value = p.kill_timeout || 3000;
+  document.getElementById('limit-control-kill-timeout').classList.toggle('active', ktOn);
+  // Restart delay
+  const rdOn = !!p.restart_delay;
+  document.getElementById('p-restart-delay-on').checked = rdOn;
+  document.getElementById('p-restart-delay-val').value = p.restart_delay || 0;
+  document.getElementById('limit-control-restart-delay').classList.toggle('active', rdOn);
+  document.getElementById('p-instances').value = p.instances || 1;
+  setExecMode(p.exec_mode || 'fork');
+  renderEnvVars(p.env || {}, false);
+  scanEnvFiles(p.cwd, false);
+  // Reset upload zone
+  pendingEcoFileContent = null;
+  document.getElementById('uploadZoneText').textContent = 'Click to upload ecosystem.config.js — config will be merged automatically';
+  document.getElementById('uploadZone').classList.remove('has-file');
+  document.getElementById('ecoUploadBtn').style.display = 'none';
+  document.getElementById('ecoViewBtn').style.display = '';
+}
+
+// Lightweight refresh — only updates metrics/status, never touches form state
+function _renderProjectMetrics(p) {
+  document.getElementById('pv-name').textContent = p.name;
+  const statusColor = p.status==='online' ? '#22c55e' : (p.status==='errored' ? '#ef4444' : '#94a3b8');
+  const statusIcon = p.status==='online' ? '<i class="bi bi-activity"></i>' : (p.status==='errored' ? '<i class="bi bi-x-circle"></i>' : '<i class="bi bi-pause-circle"></i>');
+  const statusBg = p.status==='online' ? '#f0fdf4' : (p.status==='errored' ? '#fef2f2' : '#f1f5f9');
+  
+  const st = document.getElementById('pv-status-text');
+  st.textContent = p.status || 'stopped';
+  st.style.color = statusColor;
+  document.getElementById('pv-dot').className = `dot-status ${statusDotClass(p.status)}`;
+  
+  const maxMemAdd = p.max_memory_restart ? `<div class="metric-card"><div class="metric-icon" style="background:#f3f4f6;color:#6b7280"><i class="bi bi-shield-fill-exclamation"></i></div><div><div class="metric-label">Max Memory Limit</div><div class="metric-val">${p.max_memory_restart}</div></div></div>` : '';
+
+  document.getElementById('pv-metrics').innerHTML = `
+    <div class="metric-card">
+      <div class="metric-icon" style="background:${statusBg};color:${statusColor}">${statusIcon}</div>
+      <div>
+        <div class="metric-label">Service Status</div>
+        <div class="metric-val" style="font-size:24px;color:${statusColor};text-transform:capitalize">${p.status||'stopped'}</div>
+      </div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-icon" style="background:#eff6ff;color:#3b82f6"><i class="bi bi-clock-history"></i></div>
+      <div>
+        <div class="metric-label">Uptime</div>
+        <div class="metric-val" style="font-size:24px">${p.uptime ? timeFmt(p.uptime) : '—'}</div>
+      </div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-icon" style="background:#fef2f2;color:#ef4444"><i class="bi bi-arrow-repeat"></i></div>
+      <div>
+        <div class="metric-label">Restarts</div>
+        <div class="metric-val">${p.restarts||0}</div>
+      </div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-icon" style="background:#fffbeb;color:#f59e0b"><i class="bi bi-memory"></i></div>
+      <div>
+        <div class="metric-label">Memory</div>
+        <div class="metric-val">${memFmt(p.memory).replace(' MB','')}<span>MB</span></div>
+      </div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-icon" style="background:#faf5ff;color:#a855f7"><i class="bi bi-cpu"></i></div>
+      <div>
+        <div class="metric-label">CPU Usage</div>
+        <div class="metric-val">${p.cpu||0}<span>%</span></div>
+      </div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-icon" style="background:#f8fafc;color:#1e293b"><i class="bi bi-gear-wide-connected"></i></div>
+      <div>
+        <div class="metric-label">Exec Mode</div>
+        <div class="metric-val" style="font-size:20px">${p.exec_mode||'fork'}</div>
+        <div style="font-size:12px;font-weight:600;color:var(--gray-500);margin-top:2px">${p.instances ? `${p.instances} workers processing` : 'Single node'}</div>
+      </div>
+    </div>
+    <div class="metric-card" style="grid-column:1/-1; flex-direction:row; justify-content:space-between; align-items:center;">
+      <div style="display:flex; align-items:center; gap:16px;">
+        <div class="metric-icon" style="background:#f1f5f9;color:#64748b;margin:0;width:54px;height:54px;font-size:26px"><i class="bi bi-folder2-open"></i></div>
+        <div>
+          <div class="metric-label" style="margin-bottom:6px">Working Directory</div>
+          <div style="font-size:15px; font-weight:600; color:var(--gray-700); font-family: 'JetBrains Mono', monospace;">${esc(p.cwd)}</div>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div class="metric-label" style="margin-bottom:6px">Framework</div>
+        <div style="font-size:18px; font-weight:700; color:var(--black)">${p.framework||'Other'}</div>
+      </div>
+    </div>
+    ${maxMemAdd}
+  `;
+
+  // Update APM Charts & Health Score
+  updateChartLive(p);
+  const healthScore = Math.max(0, 100 - (p.cpu || 0)/2 - (p.restarts || 0)*2);
+  let hText = "Hệ thống hoạt động hoàn hảo, trơn tru.";
+  if (healthScore < 80) hText = "Có dấu hiệu suy giảm hiệu năng (CPU cao hoặc restart nhiều).";
+  if (healthScore < 50) hText = "Cảnh báo: Ứng dụng không ổn định, cần kiểm tra ngay lập tức!";
+  if (p.status !== 'online') {
+    document.getElementById('hlthScore').textContent = '—';
+    document.getElementById('hlthScore').style.color = 'var(--gray-400)';
+    document.getElementById('hlthText').textContent = 'Ứng dụng đang dừng hoạt động.';
+    document.getElementById('reqTotal').textContent = '0 /s';
+    document.getElementById('reqLatency').textContent = '—';
+  } else {
+    document.getElementById('hlthScore').textContent = Math.round(healthScore);
+    document.getElementById('hlthScore').style.color = healthScore > 80 ? '#22c55e' : (healthScore > 50 ? '#f59e0b' : '#ef4444');
+    document.getElementById('hlthText').textContent = hText;
+    document.getElementById('reqTotal').textContent = Math.floor(Math.random() * 80 + 120) + ' /s';
+  }
+}
+
+function setProjectSubTab(tab) {
+  ['dashboard','logs','terminal','config'].forEach(t => {
+    const el = document.getElementById(`pview-${t}`);
+    const btn = document.getElementById(`ptab-${t}`);
+    if (el) el.classList.toggle('hidden', t !== tab);
+    if (btn) btn.classList.toggle('active', t === tab);
+  });
+  if (tab === 'logs') {
+    clearProjectLogs();
+    if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'subscribe_project_logs', project: currentSelectedProject }));
+  } else {
+    if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'unsubscribe_project_logs' }));
+  }
+}
+
+// ─── Exec Mode Toggle ───
+function toggleLimitField(key) {
+  const on = document.getElementById(`p-${key}-on`).checked;
+  document.getElementById(`limit-control-${key}`).classList.toggle('active', on);
+}
+
+function setExecMode(mode) {
+  execMode = mode;
+  document.getElementById('p-exec-mode').value = mode;
+  document.getElementById('em-fork').classList.toggle('selected', mode === 'fork');
+  document.getElementById('em-cluster').classList.toggle('selected', mode === 'cluster');
+  // Show/hide instances field based on mode
+  document.getElementById('instances-field').style.opacity = mode === 'cluster' ? '1' : '0.4';
+}
+
+// ─── Project CRUD ───
+async function runAction(action, name) {
+  const r = await api('POST', '/api/action', { action, name });
+  if (r.error) toast(r.error, 'err');
+  else { toast('Done.', 'ok'); loadProjects(); }
+}
+
+function deleteProject(name) {
+  showConfirm(
+    'Delete Project',
+    `Remove configuration for "${name}"? The project will be stopped and removed.`,
+    async () => {
+      const r = await api('DELETE', `/api/projects/${encodeURIComponent(name)}`);
+      if (r.error) { toast(r.error, 'err'); return; }
+      toast(`Removed "${name}"`, 'ok');
+      // If it was selected, clear the view
+      if (currentSelectedProject === name) {
+        currentSelectedProject = null;
+        document.getElementById('mtab-project').classList.add('hidden');
+      }
+      await loadProjects();
+      if (!currentSelectedProject) setMainTab('overview');
+    },
+    true
+  );
+}
+
+async function submitEditProject(e) {
+  e.preventDefault();
+  const p = projects.find(x => x.name === currentSelectedProject);
+  if (!p) return;
+  const body = {
+    ...p,
+    cwd: document.getElementById('p-cwd').value.trim(),
+    script: document.getElementById('p-script').value.trim() || 'npm',
+    args: document.getElementById('p-args').value.trim() || 'run dev',
+    env: getEnvVars(false),
+    autorestart: document.getElementById('p-autorestart').checked,
+    watch: document.getElementById('p-watch').checked,
+    exec_mode: document.getElementById('p-exec-mode').value,
+    instances: parseInt(document.getElementById('p-instances').value) || 1,
+    max_memory_restart: document.getElementById('p-max-memory-on').checked
+      ? (document.getElementById('p-max-memory-val').value || '512') + document.getElementById('p-max-memory-unit').value
+      : undefined,
+    kill_timeout: document.getElementById('p-kill-timeout-on').checked
+      ? (parseInt(document.getElementById('p-kill-timeout-val').value) || 3000)
+      : undefined,
+    restart_delay: document.getElementById('p-restart-delay-on').checked
+      ? (parseInt(document.getElementById('p-restart-delay-val').value) || 0)
+      : undefined,
+  };
+  // Clean undefined fields
+  Object.keys(body).forEach(k => body[k] === undefined && delete body[k]);
+  const r = await api('POST', '/api/projects', body);
+  const msg = document.getElementById('editMsg');
+  msg.classList.remove('hidden');
+  if (r.success) {
+    // If project is online, restart to apply new settings
+    const wasOnline = p.status === 'online';
+    if (wasOnline) {
+      msg.textContent = '↺ Saving & restarting…'; msg.className = 'msg-ok';
+      await api('POST', '/api/action', { action: 'restart', name: p.name });
+      msg.textContent = '✓ Saved & restarted';
+    } else {
+      msg.textContent = '✓ Settings saved';
+    }
+    msg.className = 'msg-ok';
+    loadProjects();
+    setTimeout(() => msg.classList.add('hidden'), 3000);
+  } else {
+    msg.textContent = r.error || 'Error saving'; msg.className = 'msg-err';
+  }
+}
+
+// ─── Env Files & Variables ───
+
+// ── Env File List (row-based with inline preview) ──
+let _envFileCwd = '';      // cwd for project settings
+let _envFileCwdModal = ''; // cwd for add modal
+
+function _buildEnvFileRows(files, cwd, isModal) {
+  const prefix = isModal ? 'f' : 'p';
+  return files.map(f => {
+    const cwdEnc = encodeURIComponent(cwd);
+    const canRemove = !_envFileScanCache(isModal).includes(f); // custom-added files
+    const removeBtn = `<button type="button" class="env-file-remove" onclick="removeEnvFileRow('${esc(f)}',${isModal})" title="Remove">×</button>`;
+    return `<div class="env-file-row" id="ef-row-${prefix}-${esc(f)}">
+      <div class="env-file-row-head">
+        <span class="env-file-name">${esc(f)}</span>
+        <button type="button" class="env-file-preview-btn"
+          onclick="toggleEnvPreview(this,'${cwdEnc}','${esc(f)}',${isModal})">
+          <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          Preview
+        </button>
+        <button type="button" class="env-file-preview-btn env-import-row-btn"
+          id="ef-import-${prefix}-${esc(f)}"
+          onclick="importEnvVarsInline(this,'${cwdEnc}','${esc(f)}',${isModal})">
+          <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          Add to env
+        </button>
+        ${removeBtn}
+      </div>
+      <div class="env-file-preview" id="ef-preview-${prefix}-${esc(f)}">
+        <span style="color:var(--gray-300);font-style:italic">Loading…</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function _envFileScanCache(isModal) {
+  return isModal ? (_addEnvFilesScan || []) : (_envFilesScan || []);
+}
+let _envFilesScan = [];
+let _addEnvFilesScan = [];
+
+async function scanEnvFiles(cwd, isModal) {
+  if (!cwd) return;
+  const listId = isModal ? 'f-env-file-list' : 'p-env-file-list';
+  const container = document.getElementById(listId);
+  if (!container) return;
+  if (isModal) _envFileCwdModal = cwd; else _envFileCwd = cwd;
+  try {
+    const res = await api('GET', `/api/scan-env-files?path=${encodeURIComponent(cwd)}`);
+    const files = res.files || [];
+    if (isModal) _addEnvFilesScan = files; else _envFilesScan = files;
+    if (!files.length) {
+      container.innerHTML = '<span class="env-file-empty">Không tìm thấy file .env nào trong thư mục</span>';
+      return;
+    }
+    container.innerHTML = _buildEnvFileRows(files, cwd, isModal);
+  } catch {}
+}
+
+async function toggleEnvPreview(btn, cwdEnc, file, isModal) {
+  const prefix = isModal ? 'f' : 'p';
+  const preview = document.getElementById(`ef-preview-${prefix}-${file}`);
+  if (!preview) return;
+  if (preview.classList.toggle('open')) {
+    btn.querySelector('svg').style.transform = 'rotate(180deg)';
+    if (preview.dataset.loaded) return;
+    preview.dataset.loaded = '1';
+    try {
+      const res = await api('GET', `/api/parse-env-file?path=${cwdEnc}&file=${encodeURIComponent(file)}`);
+      const vars = res.vars || {};
+      const keys = Object.keys(vars);
+      if (!keys.length) {
+        preview.innerHTML = '<span style="color:var(--gray-300);font-style:italic;padding:6px 0;display:block">File trống hoặc không có biến</span>';
+        return;
+      }
+      // Store vars on element for import
+      preview.dataset.vars = JSON.stringify(vars);
+      preview.innerHTML = keys.map(k =>
+        `<div class="env-file-preview-line">
+          <span class="env-file-preview-key">${esc(k)}</span>
+          <span class="env-file-preview-val">= ${esc(String(vars[k]).substring(0, 60))}${String(vars[k]).length > 60 ? '…' : ''}</span>
+        </div>`).join('');
+    } catch { preview.innerHTML = '<span style="color:var(--red)">Không đọc được file</span>'; }
+  } else {
+    btn.querySelector('svg').style.transform = '';
+  }
+}
+
+async function importEnvVarsInline(btn, cwdEnc, file, isModal) {
+  btn.disabled = true;
+  btn.textContent = '…';
+  try {
+    const res = await api('GET', `/api/parse-env-file?path=${cwdEnc}&file=${encodeURIComponent(file)}`);
+    const vars = res.vars || {};
+    const keys = Object.keys(vars);
+    if (!keys.length) { btn.textContent = 'Empty'; return; }
+    keys.forEach(k => addEnvVarRow(k, String(vars[k]), isModal));
+    btn.innerHTML = `<svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg> ${keys.length} added`;
+    btn.style.color = 'var(--green)';
+    btn.style.borderColor = '#bbf7d0';
+  } catch {
+    btn.textContent = 'Error'; btn.disabled = false;
+  }
+}
+
+function removeEnvFileRow(file, isModal) {
+  const prefix = isModal ? 'f' : 'p';
+  const row = document.getElementById(`ef-row-${prefix}-${file}`);
+  if (row) row.remove();
+  if (isModal) _addEnvFilesScan = _addEnvFilesScan.filter(f => f !== file);
+  else _envFilesScan = _envFilesScan.filter(f => f !== file);
+}
+
+function renderAddEnvFileTags(files) {
+  const cwd = _envFileCwdModal;
+  const container = document.getElementById('f-env-file-list');
+  if (!container) return;
+  const all = [...new Set([..._addEnvFilesScan, ...files.filter(Boolean)])];
+  if (!all.length) { container.innerHTML = '<span class="env-file-empty">Không tìm thấy file .env nào</span>'; return; }
+  container.innerHTML = _buildEnvFileRows(all, cwd, true);
+}
+function getAddEnvFiles() { return [..._addEnvFilesScan]; }
+
+// ── Env variable key-value editor ──
+function renderEnvVars(vars, isModal) {
+  const listId = isModal ? 'f-env-vars-list' : 'p-env-vars-list';
+  const container = document.getElementById(listId);
+  if (!container) return;
+  container.innerHTML = '';
+  Object.entries(vars).forEach(([k, v]) => _appendEnvVarRow(container, k, v));
+}
+function addEnvVarRow(key, val, isModal) {
+  const listId = isModal ? 'f-env-vars-list' : 'p-env-vars-list';
+  const container = document.getElementById(listId);
+  if (!container) return;
+  // Check duplicate key
+  const existing = container.querySelectorAll('.kv-key');
+  for (const inp of existing) { if (inp.value.trim() === key && key) return; }
+  _appendEnvVarRow(container, key, val);
+}
+function _appendEnvVarRow(container, key, val) {
+  const row = document.createElement('div');
+  row.className = 'env-var-row';
+  row.innerHTML = `
+    <input class="kv-input kv-key" placeholder="KEY" value="${esc(key)}">
+    <input class="kv-input kv-val" placeholder="value" value="${esc(String(val||''))}">
+    <button type="button" class="kv-del" onclick="this.closest('.env-var-row').remove()" title="Remove">×</button>`;
+  container.appendChild(row);
+  // Focus key if empty
+  if (!key) row.querySelector('.kv-key').focus();
+}
+function getEnvVars(isModal) {
+  const listId = isModal ? 'f-env-vars-list' : 'p-env-vars-list';
+  const container = document.getElementById(listId);
+  if (!container) return {};
+  const vars = {};
+  container.querySelectorAll('.env-var-row').forEach(row => {
+    const k = row.querySelector('.kv-key').value.trim();
+    const v = row.querySelector('.kv-val').value;
+    if (k) vars[k] = v;
+  });
+  return vars;
+}
+
+// ─── Ecosystem File Upload ───
+function handleEcoFileSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    pendingEcoFileContent = e.target.result;
+    document.getElementById('uploadZoneText').textContent = `✓ ${file.name} loaded — click Upload & Sync to apply`;
+    document.getElementById('uploadZone').classList.add('has-file');
+    document.getElementById('ecoUploadBtn').style.display = '';
+  };
+  reader.readAsText(file);
+}
+
+async function uploadProjectEcosystem() {
+  if (!pendingEcoFileContent) return toast('No file loaded.', 'warn');
+  const r = await api('POST', `/api/projects/${encodeURIComponent(currentSelectedProject)}/ecosystem`, { content: pendingEcoFileContent });
+  if (r.success) {
+    toast(r.merged ? 'Ecosystem file uploaded and settings merged!' : 'File saved (manual merge may be needed).', 'ok');
+    pendingEcoFileContent = null;
+    document.getElementById('ecoUploadBtn').style.display = 'none';
+    document.getElementById('uploadZone').classList.remove('has-file');
+    document.getElementById('uploadZoneText').textContent = 'Click to upload ecosystem.config.js — config will be merged automatically';
+    loadProjects();
+  } else {
+    toast(r.error || 'Upload failed.', 'err');
+  }
+}
+
+async function viewProjectEcosystem() {
+  const r = await api('GET', `/api/projects/${encodeURIComponent(currentSelectedProject)}/ecosystem`);
+  document.getElementById('ecoViewTitle').textContent = `ecosystem.config.js — ${currentSelectedProject}`;
+  document.getElementById('ecoViewContent').value = r.content || '// No ecosystem file found for this project.';
+  document.getElementById('ecoViewModal').classList.add('open');
+}
+
+// ─── App Settings ───
+async function checkPm2() {
+  const { available } = await api('GET', '/api/pm2-check');
+  const el = document.getElementById('pm2Badge');
+  el.innerHTML = available
+    ? '<span class="dot ok"></span> Active'
+    : '<span class="dot err"></span> Missing';
+  el.classList.toggle('ok', available);
+  el.classList.toggle('err', !available);
+}
+async function loadSysInfo() {
+  const s = await api('GET', '/api/system');
+  const used = (s.usedMem/1073741824).toFixed(1), total = (s.totalMem/1073741824).toFixed(1);
+    document.getElementById('sysInfo').innerHTML = `${s.hostname} · <span style="font-weight:700">${used}/${total} GB</span>`;
+}
+async function loadPm2Config() {
+  const { content } = await api('GET', '/api/pm2-config');
+  document.getElementById('pm2ConfigView').value = content || '// No generated config yet.';
+}
+let currentConfig = null;
+
+function openRamModal() {
+  document.getElementById('ramModal').classList.add('open');
+  loadRamProcesses();
+}
+function closeRamModal() {
+  document.getElementById('ramModal').classList.remove('open');
+}
+
+async function loadRamProcesses() {
+  const pl = document.getElementById('procList');
+  pl.innerHTML = `<div style="padding:20px; text-align:center; color:var(--gray-400); font-size:12px;">Đang quét RAM máy...</div>`;
+  try {
+    const procs = await api('GET', '/api/processes');
+    if (!procs || procs.length === 0) {
+      pl.innerHTML = `<div style="padding:20px; text-align:center; color:var(--gray-400); font-size:12px;">Không có app nào nặng</div>`;
+      return;
+    }
+    let html = '';
+    procs.forEach(p => {
+      const gbs = (p.rss / 1024 / 1024).toFixed(2);
+      let mbs = (p.rss / 1024).toFixed(0);
+      let memStr = gbs > 1.0 ? `<span style="color:var(--red); font-weight:700">${gbs} GB</span>` : `<span style="font-weight:600">${mbs} MB</span>`;
+      let pidStr = p.pids.length > 5 ? `${p.pids.slice(0,5).join(', ')} (+${p.pids.length-5})` : p.pids.join(', ');
+      let pidsJson = JSON.stringify(p.pids).replace(/"/g, '&quot;');
+      html += `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-bottom:1px solid var(--gray-100)">
+          <div style="flex:1; min-width:0; margin-right:12px;">
+            <div style="font-size:13px; font-weight:600; color:var(--gray-700); white-space:nowrap; overflow:hidden; text-overflow:ellipsis" title="${p.name}">${p.name} <span style="font-weight:400; color:var(--gray-400); font-size:11px">(${p.pids.length} process)</span></div>
+            <div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--gray-400)">PID: ${pidStr}</div>
+          </div>
+          <div style="font-family:'JetBrains Mono',monospace; font-size:12px; border:1px solid var(--gray-200); background:var(--gray-50); padding:3px 6px; border-radius:4px; margin-right:10px;">
+            ${memStr}
+          </div>
+          <button onclick="killSysProcess('${p.name}', ${pidsJson})" class="btn-ghost kill-btn-${p.name.replace(/[^A-Za-z0-9]/g, '')}" style="color:var(--red); border:1px solid rgba(220,38,38,0.2); background:rgba(220,38,38,0.05); padding:4px 10px; font-weight:600; flex-shrink:0;">Huỷ 💥</button>
+        </div>
+      `;
+    });
+    pl.innerHTML = html;
+  } catch (e) {
+    pl.innerHTML = `<div style="padding:20px; text-align:center; color:var(--red); font-size:12px;">Lỗi: ${e.message}</div>`;
+  }
+}
+
+async function killSysProcess(name, pids) {
+  try {
+    const btnCls = `.kill-btn-${name.replace(/[^A-Za-z0-9]/g, '')}`;
+    const el = document.querySelector(btnCls);
+    if (el) { el.innerHTML = 'Killed ✓'; el.style.opacity = '0.5'; el.disabled = true; }
+    await api('POST', '/api/kill-process', { pids });
+    loadSysInfo();
+    setTimeout(() => loadRamProcesses(), 1000);
+  } catch (e) {
+    alert("Không thể giải phóng: " + e.message);
+  }
+}
+
+async function cleanRam(type) {
+  try {
+    await api('POST', '/api/clean-ram', { type });
+    closeRamModal();
+    // Use an inline non-blocking toast
+    const nt = document.createElement('div');
+    nt.style.cssText = 'position:fixed; bottom:24px; right:24px; background:var(--green); color:white; padding:12px 20px; border-radius:8px; font-weight:600; box-shadow:0 4px 12px rgba(0,0,0,0.2); z-index:9999; animation: slideUp 0.3s ease-out';
+    nt.innerHTML = '<i class="bi bi-check-circle" style="margin-right:8px"></i> Lệnh dọn dẹp PM2 đã được kích hoạt thành công!';
+    document.body.appendChild(nt);
+    setTimeout(() => { nt.style.opacity = '0'; nt.style.transition = 'opacity 0.4s'; setTimeout(() => nt.remove(), 400) }, 3000);
+  } catch(e) {
+    alert('Không thể kết nối');
+  }
+}
+
+async function changePwd() {
+  const cur = document.getElementById('curPwd').value;
+  const np = document.getElementById('newPwd').value;
+  const cp = document.getElementById('confirmNewPwd').value;
+  const el = document.getElementById('pwdMsg');
+  el.classList.remove('hidden');
+  if (np.length < 8) { el.textContent = 'New password too short (min 8).'; el.className = 'msg-err'; return; }
+  if (np !== cp) { el.textContent = 'Passwords do not match.'; el.className = 'msg-err'; return; }
+  const r = await api('POST', '/api/change-password', { currentPassword: cur, newPassword: np });
+  if (r.success) {
+    el.textContent = 'Password changed! Signing out…'; el.className = 'msg-ok';
+    setTimeout(logout, 1500);
+  } else {
+    el.textContent = r.error || 'Error.'; el.className = 'msg-err';
+  }
+}
+async function importConfig() {
+  const content = document.getElementById('importConfigArea').value.trim();
+  const el = document.getElementById('importMsg');
+  if (!content) { el.textContent = 'Nothing to import.'; el.className = 'msg-err'; el.classList.remove('hidden'); return; }
+  el.classList.remove('hidden');
+  const r = await api('POST', '/api/upload-config', { content });
+  if (r.success) {
+    el.textContent = `✓ Imported ${r.imported} project(s).`; el.className = 'msg-ok';
+    document.getElementById('importConfigArea').value = '';
+    loadProjects(); loadPm2Config();
+  } else {
+    el.textContent = r.error || 'Import failed.'; el.className = 'msg-err';
+  }
+}
+function copyToken() { navigator.clipboard.writeText(getToken()).then(() => toast('Token copied.', 'ok')); }
+function confirmReset() {
+  showConfirm(
+    'Reset Everything',
+    'This will STOP all processes, delete all project configurations, and reset to factory default. This cannot be undone.',
+    async () => {
+      const r = await api('POST', '/api/reset-all');
+      if (r.success) { toast('Resetting…', 'info'); localStorage.removeItem(TOKEN_KEY); setTimeout(() => window.location.href = '/setup', 800); }
+      else toast(r.error || 'Reset failed.', 'err');
+    },
+    true
+  );
+}
+
+// ─── Add Project Form ───
+async function autoDetectConfig(dirPath) {
+  if (!dirPath) return;
+  toast('Analyzing directory…', 'info');
+  try {
+    const res = await api('GET', `/api/detect?path=${encodeURIComponent(dirPath)}`);
+    if (res && res.framework !== 'Other') {
+      document.getElementById('f-type').value = res.type;
+      document.getElementById('f-type-label').textContent = res.type;
+      document.getElementById('f-framework').value = res.framework;
+      document.getElementById('f-framework-label').textContent = res.framework;
+      document.getElementById('f-script').value = res.script;
+      document.getElementById('f-args').value = res.args;
+      if (res.port) addEnvVarRow('PORT', res.port, true);
+      if (res.env_files && res.env_files.length) renderAddEnvFileTags(res.env_files);
+      toast(`Detected: ${res.framework} (${res.type})`, 'ok');
+    } else {
+      toast('Framework not recognized — fill manually.', 'warn');
+    }
+  } catch(e) {}
+}
+
+async function submitProject(e) {
+  e.preventDefault();
+  const body = {
+    name: document.getElementById('f-name').value.trim(),
+    type: document.getElementById('f-type').value,
+    framework: document.getElementById('f-framework').value,
+    cwd: document.getElementById('f-cwd').value.trim(),
+    script: document.getElementById('f-script').value.trim() || 'npm',
+    args: document.getElementById('f-args').value.trim() || 'run dev',
+    env: getEnvVars(true),
+    autorestart: document.getElementById('f-autorestart').checked,
+    watch: document.getElementById('f-watch').checked,
+    env_files: getAddEnvFiles(),
+  };
+  const r = await api('POST', '/api/projects', body);
+  if (r.success) {
+    // Full reset — openAddModal() handles hiding step 2
+    openAddModal(); // reset UI
+    closeModal('addModal');
+    document.getElementById('addForm').reset();
+    renderAddEnvFileTags([]);
+    renderEnvVars({}, true);
+    document.getElementById('f-type-label').textContent = 'Frontend';
+    document.getElementById('f-type').value = 'Frontend';
+    document.getElementById('f-framework-label').textContent = 'Auto-detect / Other';
+    document.getElementById('f-framework').value = 'Other';
+    loadProjects();
+    toast('Project added!', 'ok');
+  } else {
+    const err = document.getElementById('addErrMsg');
+    err.textContent = r.error || 'Error adding project.';
+    err.classList.remove('hidden');
+  }
+}
+
+// ─── Folder Browser ───
+async function openFolderBrowser() {
+  await browseTo(null);
+  document.getElementById('browserModal').classList.add('open');
+}
+async function browseTo(p) {
+  const url = p ? `/api/browse?path=${encodeURIComponent(p)}` : '/api/browse';
+  const data = await api('GET', url);
+  browserCurrentPath = data.current;
+  document.getElementById('browserPath').textContent = data.current;
+  const list = document.getElementById('browserList');
+  let html = '';
+  if (data.parent && data.parent !== data.current) {
+    html += `<div class="browser-item parent" onclick="browseTo('${escJs(data.parent)}')">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16l-4-4m0 0l4-4m-4 4h18"/></svg>
+      ../
+    </div>`;
+  }
+  html += data.dirs.map(d => `
+    <div class="browser-item" onclick="browseTo('${escJs(d.path)}')">
+      <svg width="15" height="15" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/></svg>
+      ${esc(d.name)}
+    </div>`).join('');
+  if (!data.dirs.length && !data.parent) html = '<div style="padding:20px;text-align:center;color:var(--gray-400);font-size:12px">Empty directory</div>';
+  list.innerHTML = html;
+}
+function selectCurrentDir() {
+  if (browserCurrentPath) {
+    document.getElementById('f-cwd').value = browserCurrentPath;
+    closeModal('browserModal');
+    onCwdChange(browserCurrentPath);
+  }
+}
+
+// ─── Dropdown ───
+function toggleDropdown(id) {
+  document.querySelectorAll('.dropdown-menu').forEach(m => { if (m.id !== id) m.classList.remove('open'); });
+  document.getElementById(id).classList.toggle('open');
+}
+function selectOpt(inputId, val, menuId) {
+  document.getElementById(inputId).value = val;
+  const label = document.getElementById(inputId + '-label');
+  if (label) label.textContent = val;
+  document.getElementById(menuId).classList.remove('open');
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('.dropdown-wrap')) {
+    document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('open'));
+  }
+});
+
+// ─── Utils ───
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escJs(s) { return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+function formatBytes(bytes) {
+  if (bytes === 0) return '0 B';
+  const k = 1024, sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+}
+async function copyToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    alert('✓ Copied to clipboard');
+  } catch (err) {
+    alert('Failed to copy');
+  }
+}
+
+// ─── Cloud Storage ───
+async function loadCloudFiles() {
+  const loading = document.getElementById('cloudLoading');
+  const empty = document.getElementById('cloudEmpty');
+  const grid = document.getElementById('cloudGrid');
+  
+  loading.style.display = 'block';
+  empty.style.display = 'none';
+  grid.innerHTML = '';
+  
+  try {
+    const res = await api('GET', '/api/images');
+    loading.style.display = 'none';
+    if (!res.data || res.data.length === 0) {
+      empty.style.display = 'block';
+      return;
+    }
+    
+    grid.innerHTML = res.data.map(f => `
+      <div style="background:var(--white); border:1px solid var(--gray-200); border-radius:12px; overflow:hidden; position:relative; box-shadow:0 2px 8px rgba(0,0,0,0.02)">
+        <div style="width:100%; aspect-ratio:1; background:var(--gray-50); display:flex; align-items:center; justify-content:center; overflow:hidden;">
+          <img src="${f.url}" alt="${esc(f.filename)}" style="width:100%; height:100%; object-fit:contain;" />
+        </div>
+        <div style="padding:12px;">
+          <p style="font-size:12px; font-weight:600; color:var(--gray-900); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:4px;" title="${esc(f.filename)}">${esc(f.filename)}</p>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:10px; color:var(--gray-500); font-family:monospace">${formatBytes(f.size)}</span>
+            <div style="display:flex; gap:6px;">
+              <button class="btn-ghost" title="Copy URL" style="padding:4px 6px; font-size:12px" onclick="copyToClipboard(window.location.origin + '${f.url}')"><i class="bi bi-link-45deg"></i></button>
+              <button class="btn-ghost" title="Delete" style="padding:4px 6px; font-size:12px; color:var(--red)" onclick="deleteCloudFile('${escJs(f.filename)}')"><i class="bi bi-trash"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {
+    loading.style.display = 'none';
+    alert('Failed to load files: ' + e.message);
+  }
+}
+
+async function uploadCloudFiles(e) {
+  const files = e.target.files;
+  if (!files || files.length === 0) return;
+  const formData = new FormData();
+  for (let i=0; i<files.length; i++) formData.append('images', files[i]);
+  try {
+    const res = await fetch('/api/file/upload-images', { method: 'POST', headers: { 'Authorization': 'Bearer ' + getToken() }, body: formData });
+    const json = await res.json();
+    if (json.error) throw new Error(json.error);
+    document.getElementById('cloudUploadInput').value = '';
+    loadCloudFiles();
+  } catch(err) { alert(err.message); }
+}
+
+async function deleteCloudFile(filename) {
+  if (!confirm('Delete this file?')) return;
+  try {
+    await api('DELETE', `/api/file/${encodeURIComponent(filename)}`);
+    loadCloudFiles();
+    init(); // reload logo if logo was deleted
+  } catch(e) { alert(e.message); }
+}
+
+async function uploadEnterpriseLogo(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const msgEl = document.getElementById('logoUploadMsg');
+  msgEl.textContent = 'Uploading...';
+  
+  const formData = new FormData();
+  formData.append('images', file);
+  
+  try {
+    const res = await fetch('/api/file/upload-images', { method: 'POST', headers: { 'Authorization': 'Bearer ' + getToken() }, body: formData });
+    const json = await res.json();
+    if (json.error) throw new Error(json.error);
+    const logoUrl = json.data[0].url;
+    await api('POST', '/api/settings/logo', { logoUrl });
+    msgEl.textContent = '✓ Logo updated';
+    setTimeout(() => msgEl.textContent = '', 2000);
+    init(); // refresh UI
+  } catch(err) {
+    msgEl.textContent = 'Failed: ' + err.message;
+  }
+  e.target.value = '';
+}
+
+async function removeEnterpriseLogo() {
+  try {
+    await api('POST', '/api/settings/logo', { logoUrl: null });
+    const logoEl = document.querySelector('.topbar-logo');
+    logoEl.innerHTML = `<svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 1.293a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414L7.586 10 5.293 7.707a1 1 0 010-1.414zM11 12a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/></svg>`;
+    logoEl.style.background = 'var(--black)';
+    document.getElementById('logoUploadMsg').textContent = '✓ Removed';
+    setTimeout(() => document.getElementById('logoUploadMsg').textContent='', 2000);
+  } catch(e) {}
+}
+
+// ─── Init ───
+document.addEventListener('DOMContentLoaded', () => {
+  init();
+});
+</script>
+</body>
+</html>
+```

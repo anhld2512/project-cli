@@ -1,0 +1,17 @@
+#!/bin/bash
+SOURCE="${BASH_SOURCE[0]}"
+while [ -L "$SOURCE" ]; do
+  DIR=$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )
+  SOURCE=$(readlink "$SOURCE")
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+DIR=$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )
+
+if [ ! -d "$DIR/venv" ]; then
+    echo "Đang khởi tạo môi trường Python (Python VENV)..."
+    python3 -m venv "$DIR/venv"
+    "$DIR/venv/bin/pip" install rich prompt-toolkit
+fi
+
+# Thực thi python script mới nhất với giao diện đẹp
+exec "$DIR/venv/bin/python" "$DIR/project_cli.py" "$@"

@@ -1,0 +1,134 @@
+<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+
+    <!-- ══ TITLE ══ -->
+    <mxCell id="title" value="⚙️  Cơ chế hoạt động Project CLI — Hệ sinh thái DATools" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=24;fontStyle=1;fontColor=#1A1A1A;" vertex="1" parent="1">
+      <mxGeometry x="200" y="40" width="1200" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- ══════════════════════════════════════════
+         DIVIDER (Trục phân tách - Center)
+    ══════════════════════════════════════════ -->
+    <mxCell id="divider" value="" style="line;strokeColor=#E0E0E0;fillColor=none;dashed=1;strokeWidth=2;rotation=180;" vertex="1" parent="1">
+      <mxGeometry x="815" y="120" width="10" height="1000" as="geometry" />
+    </mxCell>
+
+    <!-- ══════════════════════════════════════════
+         LEFT — WEB DASHBOARD FLOW (Node.js)
+    ══════════════════════════════════════════ -->
+    <mxCell id="web_label" value="🌐  Web Dashboard Server (Node.js Engine)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=18;fontColor=#1D9E75;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="100" y="120" width="600" height="40" as="geometry" />
+    </mxCell>
+
+    <!-- Node 1: Start -->
+    <mxCell id="web_start" value="&lt;b&gt;Khởi động Server Dashboard&lt;/b&gt;&lt;br&gt;Kiểm tra Port 3035 và tự động giải phóng&lt;br&gt;tài nguyên nếu port đang bị chiếm dụng" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1F5EE;strokeColor=#1D9E75;fontColor=#085041;fontSize=14;spacingLeft=20;spacingTop=10;spacingBottom=10;" vertex="1" parent="1">
+      <mxGeometry x="150" y="190" width="500" height="90" as="geometry" />
+    </mxCell>
+
+    <mxCell id="a1" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#1D9E75;strokeWidth=2;" edge="1" parent="1" source="web_start" target="web_scan">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="400" y="310" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- Node 2: Scan -->
+    <mxCell id="web_scan" value="&lt;b&gt;Quét Dự án (Project Auto-Detect)&lt;/b&gt;&lt;br&gt;Phân tích mã nguồn để nhận diện Framework&lt;br&gt;(Next.js, NestJS, Rails, Django...)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#9FE1CB;strokeColor=#1D9E75;fontColor=#085041;fontSize=14;spacingLeft=20;spacingTop=10;spacingBottom=10;" vertex="1" parent="1">
+      <mxGeometry x="150" y="350" width="500" height="90" as="geometry" />
+    </mxCell>
+
+    <mxCell id="a2" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#1D9E75;strokeWidth=2;" edge="1" parent="1" source="web_scan" target="web_pm2">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Node 3: PM2 Sync -->
+    <mxCell id="web_pm2" value="&lt;b&gt;Đồng bộ PM2 Ecosystem&lt;/b&gt;&lt;br&gt;Sinh tệp cấu hình JSON và JavaScript&lt;br&gt;để PM2 vận hành các project con ngầm" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1F5EE;strokeColor=#1D9E75;fontColor=#085041;fontSize=14;spacingLeft=20;spacingTop=10;spacingBottom=10;" vertex="1" parent="1">
+      <mxGeometry x="150" y="510" width="500" height="90" as="geometry" />
+    </mxCell>
+
+    <mxCell id="a3" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#1D9E75;strokeWidth=2;" edge="1" parent="1" source="web_pm2" target="web_ui">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Node 4: UI/WS -->
+    <mxCell id="web_ui" value="&lt;b&gt;Giao diện Real-time (Web UI)&lt;/b&gt;&lt;br&gt;WebSocket truyền tin logs và tài nguyên&lt;br&gt;hệ thống lên Dashboard trực tuyến" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#9FE1CB;strokeColor=#1D9E75;fontColor=#085041;fontSize=14;spacingLeft=20;spacingTop=10;spacingBottom=10;" vertex="1" parent="1">
+      <mxGeometry x="150" y="670" width="500" height="90" as="geometry" />
+    </mxCell>
+
+    <!-- ══════════════════════════════════════════
+         RIGHT — TERMINAL CLI FLOW (Python)
+    ══════════════════════════════════════════ -->
+    <mxCell id="cli_label" value="⌨️  Terminal CLI Environment (Python Engine)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=18;fontColor=#794B02;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="950" y="120" width="600" height="40" as="geometry" />
+    </mxCell>
+
+    <!-- Node 1: VENV -->
+    <mxCell id="cli_venv" value="&lt;b&gt;Thiết lập Môi trường Python&lt;/b&gt;&lt;br&gt;Cách ly bằng VENV, cài đặt dependencies&lt;br&gt;Rich và Prompt-Toolkit để render giao diện" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF4E1;strokeColor=#BA7517;fontColor=#794B02;fontSize=14;spacingLeft=20;spacingTop=10;spacingBottom=10;" vertex="1" parent="1">
+      <mxGeometry x="1000" y="190" width="500" height="90" as="geometry" />
+    </mxCell>
+
+    <mxCell id="b1" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#BA7517;strokeWidth=2;" edge="1" parent="1" source="cli_venv" target="cli_json">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Node 2: Shared Config -->
+    <mxCell id="cli_json" value="&lt;b&gt;Khởi tạo và Đọc Cấu hình&lt;/b&gt;&lt;br&gt;Liên kết với file projects.json toàn cục&lt;br&gt;trong thư mục ~/.project-cli" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FAC775;strokeColor=#BA7517;fontColor=#794B02;fontSize=14;spacingLeft=20;spacingTop=10;spacingBottom=10;" vertex="1" parent="1">
+      <mxGeometry x="1000" y="350" width="500" height="90" as="geometry" />
+    </mxCell>
+
+    <mxCell id="b2" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#BA7517;strokeWidth=2;" edge="1" parent="1" source="cli_json" target="cli_exec">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Node 3: Command Execution -->
+    <mxCell id="cli_exec" value="&lt;b&gt;Thực thi Lệnh Dashboard&lt;/b&gt;&lt;br&gt;Quản lý /add, /dev, /list, /stop với&lt;br&gt;cơ chế tab-completion thông minh" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF4E1;strokeColor=#BA7517;fontColor=#794B02;fontSize=14;spacingLeft=20;spacingTop=10;spacingBottom=10;" vertex="1" parent="1">
+      <mxGeometry x="1000" y="510" width="500" height="90" as="geometry" />
+    </mxCell>
+
+    <mxCell id="b3" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#BA7517;strokeWidth=2;" edge="1" parent="1" source="cli_exec" target="cli_pro">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Node 4: CLI Pro -->
+    <mxCell id="cli_pro" value="&lt;b&gt;Hỗ trợ Non-interactive Mode&lt;/b&gt;&lt;br&gt;Nhận đối số trực tiếp từ Shell Shell&lt;br&gt;cho các kịch bản tự động hóa (scripts)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FAC775;strokeColor=#BA7517;fontColor=#794B02;fontSize=14;spacingLeft=20;spacingTop=10;spacingBottom=10;" vertex="1" parent="1">
+      <mxGeometry x="1000" y="670" width="500" height="90" as="geometry" />
+    </mxCell>
+
+    <!-- ══════════════════════════════════════════
+         CENTRAL - STORAGE & OBJECTIVES (Dữ liệu chung)
+    ══════════════════════════════════════════ -->
+    <mxCell id="storage_box" value="&lt;b&gt;TRUNG TÂM LƯU TRỮ DỮ LIỆU&lt;/b&gt;&lt;br&gt;&lt;br&gt;~/.project-cli/projects.json&lt;br&gt;~/.project-cli/ecosystem.config.js&lt;br&gt;&lt;br&gt;(Điểm giao thoa duy nhất giữa Web và CLI)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8F9FA;strokeColor=#D1D1D1;fontColor=#444444;fontSize=15;fontStyle=1;align=center;spacingTop=10;spacingBottom=10;" vertex="1" parent="1">
+      <mxGeometry x="630" y="320" width="370" height="240" as="geometry" />
+    </mxCell>
+
+    <!-- ══ LEGEND ══ -->
+    <mxCell id="leg_title" value="Ký hiệu Thành phần:" style="text;html=1;strokeColor=none;fillColor=none;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="150" y="800" width="180" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="leg1_box" value="" style="rounded=1;fillColor=#9FE1CB;strokeColor=#1D9E75;" vertex="1" parent="1">
+      <mxGeometry x="340" y="806" width="30" height="20" as="geometry" />
+    </mxCell>
+    <mxCell id="leg1_txt" value="Hệ thống Web UI &amp; Web Server" style="text;html=1;strokeColor=none;fillColor=none;fontSize=13;" vertex="1" parent="1">
+      <mxGeometry x="380" y="804" width="220" height="26" as="geometry" />
+    </mxCell>
+    <mxCell id="leg2_box" value="" style="rounded=1;fillColor=#FAC775;strokeColor=#BA7517;" vertex="1" parent="1">
+      <mxGeometry x="610" y="806" width="30" height="20" as="geometry" />
+    </mxCell>
+    <mxCell id="leg2_txt" value="Hệ thống Điều khiển Terminal" style="text;html=1;strokeColor=none;fillColor=none;fontSize=13;" vertex="1" parent="1">
+      <mxGeometry x="650" y="804" width="200" height="26" as="geometry" />
+    </mxCell>
+
+    <!-- ══ BOTTOM SUMMARY (Hộp tổng kết) ══ -->
+    <mxCell id="summary" value="&lt;b&gt;📌 Sứ mệnh của Dự án:&lt;/b&gt; Hợp nhất trải nghiệm quản trị đa project. Dự án cam kết mang lại sự tiện lợi, tốc độ và ổn định cho dev workspace.&lt;br&gt;&lt;b&gt;🎯 Mục tiêu chiến lược:&lt;/b&gt; 1. Quản lý tập trung tài nguyên hệ thống | 2. Tự động hóa hoàn toàn PM2 | 3. Triệt tiêu xung đột Port thông minh | 4. API/CLI đồng nhất.&lt;br&gt;&lt;b&gt;🏗️ Kiến trúc lõi:&lt;/b&gt; Node.js Express (Backend) / Python Script (CLI Interaction) / PM2 Runtime Control (Process Engine)." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ECF3FF;strokeColor=#4A90E2;fontColor=#212121;fontSize=15;spacingTop=15;spacingBottom=15;spacingLeft=25;align=left;" vertex="1" parent="1">
+      <mxGeometry x="150" y="880" width="1350" height="120" as="geometry" />
+    </mxCell>
+
+    <mxCell id="footer" value="© 2026 DATools — datools.info | Solution for Developers" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=13;fontColor=#BBBBBB;" vertex="1" parent="1">
+      <mxGeometry x="200" y="1020" width="1200" height="40" as="geometry" />
+    </mxCell>
+
+  </root>
+</mxGraphModel>
